@@ -2,9 +2,16 @@
 profile="black"
 skip_gitignore=true
 
-[tool.mypy]  # or mypy in mypy
+[tool.mypy]
 strict=true
 files = [
     "lta",
     "tests"
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    'firebase_admin.*',
+    'google.*'
+]
+ignore_missing_imports = true
