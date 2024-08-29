@@ -6,3 +6,6 @@ lint:
 
 test:
 	. venv/bin/activate && pytest
+
+run-dev:
+	. venv/bin/activate && uvicorn lta.api.app:app --port 8123 --reload
