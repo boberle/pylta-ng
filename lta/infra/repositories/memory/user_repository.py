@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from pydantic import EmailStr
+
 from lta.domain.user import Device, User
 from lta.domain.user_repository import UserNotFound, UserRepository
 
@@ -30,12 +32,15 @@ class InMemoryUserRepository(UserRepository):
                 return
         self.users[id].devices.append(device)
 
-    def create_user(self, id: str) -> User:
+    def create_user(
+        self, id: str, email_address: EmailStr, created_at: datetime
+    ) -> None:
         user = User(
-            id=id, email_address="user@idontexist.net", created_at=datetime.now()
+            id=id,
+            email_address=email_address,
+            created_at=created_at,
         )
         self.users[id] = user
-        return user
 
     def exists(self, id: str) -> bool:
         return id in self.users

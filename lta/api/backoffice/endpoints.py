@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 
 from lta.api.configuration import AppConfiguration, get_configuration
+from lta.authentication import get_admin_user
 from lta.domain.user import User
+from lta.domain.user_repository import UserNotFound
 
 router = APIRouter()
 
@@ -12,10 +16,13 @@ router = APIRouter()
 class UserItemResponse(BaseModel):
     id: str
     email_address: EmailStr
+    created_at: datetime
 
     @staticmethod
     def from_domain(user: User) -> UserItemResponse:
-        return UserItemResponse(id=user.id, email_address=user.email_address)
+        return UserItemResponse(
+            id=user.id, email_address=user.email_address, created_at=user.created_at
+        )
 
 
 class UserListResponse(BaseModel):
@@ -25,6 +32,7 @@ class UserListResponse(BaseModel):
 @router.get("/users/")
 async def get_users(
     configuration: AppConfiguration = Depends(get_configuration),
+    admin_id: str = Depends(get_admin_user),
 ) -> UserListResponse:
     users = configuration.user_repository.list_users()
     return UserListResponse(
@@ -35,10 +43,13 @@ async def get_users(
 class UserResponse(BaseModel):
     id: str
     email_address: EmailStr
+    created_at: datetime
 
     @staticmethod
     def from_domain(user: User) -> UserResponse:
-        return UserResponse(id=user.id, email_address=user.email_address)
+        return UserResponse(
+            id=user.id, email_address=user.email_address, created_at=user.created_at
+        )
 
 
 @router.get("/users/{id:str}/")
@@ -46,5 +57,8 @@ async def get_user(
     id: str,
     configuration: AppConfiguration = Depends(get_configuration),
 ) -> UserResponse:
-    user = configuration.user_repository.get_user(id)
+    try:
+        user = configuration.user_repository.get_user(id)
+    except UserNotFound:
+        raise HTTPException(status_code=404)
     return UserResponse.from_domain(user)

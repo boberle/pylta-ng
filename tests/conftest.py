@@ -1,16 +1,17 @@
-from typing import Any
-
-from lta.api.configuration import get_firestore_client, get_project_name
-from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
-
 import urllib.request
 from datetime import datetime
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
 
+from lta.api.configuration import (
+    get_firebase_app,
+    get_firestore_client,
+    get_project_name,
+)
 from lta.domain.user import Device, DeviceOS, User
 from lta.domain.user_repository import UserRepository
+from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
 from lta.infra.repositories.memory.user_repository import InMemoryUserRepository
 
 
@@ -49,7 +50,8 @@ def prefilled_memory_user_repository() -> UserRepository:
 
 @pytest.fixture
 def empty_firestore_user_repository() -> Generator[UserRepository, None, None]:
-    yield FirestoreUserRepository(get_firestore_client())
+    get_firebase_app()
+    yield FirestoreUserRepository(get_firestore_client(use_emulator=True))
     request = urllib.request.Request(
         f"http://localhost:8080/emulator/v1/projects/{get_project_name()}/databases/(default)/documents",
         method="DELETE",
@@ -66,13 +68,11 @@ def empty_memory_user_repository() -> UserRepository:
 
 @pytest.fixture(params=["memory", "firestore"])
 def empty_user_repository(
-        request: Any,
-        empty_firestore_user_repository: FirestoreUserRepository,
-        empty_memory_user_repository: InMemoryUserRepository,
+    request: Any,
+    empty_firestore_user_repository: FirestoreUserRepository,
+    empty_memory_user_repository: InMemoryUserRepository,
 ) -> Generator[UserRepository, None, None]:
     if request.param == "firestore":
         yield empty_firestore_user_repository
     else:
         yield empty_memory_user_repository
-
-
