@@ -14,7 +14,8 @@ class Device(BaseModel):
     token: str
     os: DeviceOS
     version: str | None
-    connection: datetime
+    first_connection: datetime
+    last_connection: datetime
 
 
 class User(BaseModel):

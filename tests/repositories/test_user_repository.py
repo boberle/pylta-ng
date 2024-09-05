@@ -41,13 +41,15 @@ def test_get_device_registrations_from_user_id(
         token="device1_token",
         os=DeviceOS.ANDROID,
         version="1",
-        connection=datetime.now(tz=timezone.utc),
+        first_connection=datetime.now(tz=timezone.utc),
+        last_connection=datetime.now(tz=timezone.utc),
     )
     device2 = Device(
         token="device2_token",
         os=DeviceOS.ANDROID,
         version="1",
-        connection=datetime.now(tz=timezone.utc),
+        first_connection=datetime.now(tz=timezone.utc),
+        last_connection=datetime.now(tz=timezone.utc),
     )
     empty_user_repository.set_device_registration("user1", device1)
     empty_user_repository.set_device_registration("user1", device2)
@@ -61,13 +63,15 @@ def test_get_device_registrations_from_user_id(
         token="device3_token",
         os=DeviceOS.ANDROID,
         version="1",
-        connection=datetime.now(tz=timezone.utc),
+        first_connection=datetime.now(tz=timezone.utc),
+        last_connection=datetime.now(tz=timezone.utc),
     )
     device4 = Device(
         token="device4_token",
         os=DeviceOS.ANDROID,
         version="1",
-        connection=datetime.now(tz=timezone.utc),
+        first_connection=datetime.now(tz=timezone.utc),
+        last_connection=datetime.now(tz=timezone.utc),
     )
     empty_user_repository.set_device_registration("user2", device3)
     empty_user_repository.set_device_registration("user2", device4)
@@ -110,7 +114,8 @@ def test_set_device_registration(empty_user_repository: UserRepository) -> None:
         token="device1_token",
         os=DeviceOS.ANDROID,
         version="1",
-        connection=datetime.now(tz=timezone.utc),
+        first_connection=datetime.now(tz=timezone.utc),
+        last_connection=datetime.now(tz=timezone.utc),
     )
     empty_user_repository.set_device_registration("user1", device)
     assert device in empty_user_repository.get_device_registrations_from_user_id(
