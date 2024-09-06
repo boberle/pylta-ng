@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from lta.domain.assignment import AnswerType, Assignment
 from lta.domain.assignment_repository import AssignmentNotFound, AssignmentRepository
+from lta.infra.repositories.firestore.utils import make_filter
 
 
 class StoredAssignment(BaseModel):
@@ -99,7 +100,9 @@ class FirestoreAssignmentRepository(AssignmentRepository):
 
     def list_assignments(self, user_id: str) -> List[Assignment]:
         assignments_ref = self.client.collection(self.collection_name)
-        docs = assignments_ref.where("user_id", "==", user_id).stream()
+        docs = assignments_ref.where(
+            filter=make_filter("user_id", "==", user_id)
+        ).stream()
         stored_assignments = (
             pydantic.TypeAdapter(StoredAssignment).validate_python(doc.to_dict())
             for doc in docs
@@ -141,9 +144,9 @@ class FirestoreAssignmentRepository(AssignmentRepository):
     ) -> List[Assignment]:
         assignments_ref = self.client.collection(self.collection_name)
         docs = (
-            assignments_ref.where("user_id", "==", user_id)
-            .where("expired_at", ">", ref_time)
-            .where("submitted_at", "==", None)
+            assignments_ref.where(filter=make_filter("user_id", "==", user_id))
+            .where(filter=make_filter("expired_at", ">", ref_time))
+            .where(filter=make_filter("submitted_at", "==", None))
         ).stream()
         stored_assignments = (
             pydantic.TypeAdapter(StoredAssignment).validate_python(doc.to_dict())
