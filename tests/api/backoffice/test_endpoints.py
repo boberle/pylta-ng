@@ -54,4 +54,14 @@ def test_get_user(test_client: TestClient) -> None:
         "email_address": "user1@idontexist.net",
         "id": "user1",
         "created_at": "2022-01-01T00:00:00",
+        "devices": [
+            {
+                "last_connection": "2024-01-02T00:00:00",
+                "token": "device1",
+            },
+            {
+                "last_connection": "2024-01-03T00:00:00",
+                "token": "device2",
+            },
+        ],
     }
