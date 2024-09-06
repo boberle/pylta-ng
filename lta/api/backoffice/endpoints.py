@@ -40,15 +40,27 @@ async def get_users(
     )
 
 
+class Device(BaseModel):
+    token: str
+    last_connection: datetime
+
+
 class UserResponse(BaseModel):
     id: str
     email_address: EmailStr
     created_at: datetime
+    devices: list[Device]
 
     @staticmethod
     def from_domain(user: User) -> UserResponse:
         return UserResponse(
-            id=user.id, email_address=user.email_address, created_at=user.created_at
+            id=user.id,
+            email_address=user.email_address,
+            created_at=user.created_at,
+            devices=[
+                Device(token=device.token, last_connection=device.last_connection)
+                for device in user.devices
+            ],
         )
 
 
