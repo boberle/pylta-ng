@@ -1,3 +1,9 @@
+from tests.fixtures.assignment_repositories import (  # noqa: F401
+    empty_assignment_repository,
+    empty_firestore_assignment_repository,
+    empty_memory_assignment_repository,
+    prefilled_memory_assignment_repository,
+)
 from tests.fixtures.group_repositories import (  # noqa:F401
     empty_firestore_group_repository,
     empty_group_repository,
