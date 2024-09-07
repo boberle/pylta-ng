@@ -40,7 +40,7 @@ def empty_firestore_assignment_repository() -> (
 
 @pytest.fixture
 def empty_memory_assignment_repository() -> AssignmentRepository:
-    return InMemoryAssignmentRepository(assignments={})
+    return InMemoryAssignmentRepository()
 
 
 @pytest.fixture(params=["memory", "firestore"])

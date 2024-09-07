@@ -8,19 +8,20 @@ from lta.domain.assignment import AnswerType, Assignment
 
 @dataclass
 class AssignmentNotFound(Exception):
+    user_id: str
     assignment_id: str
 
 
 class AssignmentRepository(Protocol):
     @abstractmethod
-    def get_assignment(self, id: str) -> Assignment: ...
+    def get_assignment(self, user_id: str, id: str) -> Assignment: ...
 
     @abstractmethod
     def create_assignment(
         self,
+        user_id: str,
         id: str,
         survey_id: str,
-        user_id: str,
         created_at: datetime,
     ) -> None: ...
 
@@ -28,23 +29,23 @@ class AssignmentRepository(Protocol):
     def list_assignments(self, user_id: str) -> list[Assignment]: ...
 
     @abstractmethod
-    def schedule_assignment(self, id: str, when: datetime) -> None: ...
+    def schedule_assignment(self, user_id: str, id: str, when: datetime) -> None: ...
 
     @abstractmethod
-    def publish_assignment(self, id: str, when: datetime) -> None: ...
+    def publish_assignment(self, user_id: str, id: str, when: datetime) -> None: ...
 
     @abstractmethod
-    def notify_user(self, id: str, when: datetime) -> None: ...
+    def notify_user(self, user_id: str, id: str, when: datetime) -> None: ...
 
     @abstractmethod
-    def open_assignment(self, id: str, when: datetime) -> None: ...
+    def open_assignment(self, user_id: str, id: str, when: datetime) -> None: ...
 
     @abstractmethod
     def submit_assignment(
-        self, id: str, when: datetime, answers: list[AnswerType]
+        self, user_id: str, id: str, when: datetime, answers: list[AnswerType]
     ) -> None: ...
 
     @abstractmethod
-    def get_pending_assignments(
+    def list_pending_assignments(
         self, user_id: str, ref_time: datetime
     ) -> list[Assignment]: ...

@@ -68,13 +68,14 @@ class StoredAssignment(BaseModel):
 class FirestoreAssignmentRepository(AssignmentRepository):
     client: firestore.Client
     collection_name: str = "assignments"
+    user_collection_name: str = "users"
     expiration_delay: timedelta = timedelta(hours=1)
 
-    def get_assignment(self, id: str) -> Assignment:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+    def get_assignment(self, user_id: str, id: str) -> Assignment:
+        doc_ref = self._get_collection_ref(user_id).document(id)
         doc = doc_ref.get()
         if not doc.exists:
-            raise AssignmentNotFound(assignment_id=id)
+            raise AssignmentNotFound(user_id=user_id, assignment_id=id)
         stored_assignment: StoredAssignment = pydantic.TypeAdapter(
             StoredAssignment
         ).validate_python(doc.to_dict())
@@ -82,9 +83,9 @@ class FirestoreAssignmentRepository(AssignmentRepository):
 
     def create_assignment(
         self,
+        user_id: str,
         id: str,
         survey_id: str,
-        user_id: str,
         created_at: datetime,
     ) -> None:
         assigment = Assignment(
@@ -94,12 +95,12 @@ class FirestoreAssignmentRepository(AssignmentRepository):
             created_at=created_at,
         )
         stored_assignment = StoredAssignment.from_domain(assigment)
-        self.client.collection(self.collection_name).document(id).set(
+        self._get_collection_ref(user_id).document(id).set(
             stored_assignment.model_dump()
         )
 
     def list_assignments(self, user_id: str) -> List[Assignment]:
-        assignments_ref = self.client.collection(self.collection_name)
+        assignments_ref = self._get_collection_ref(user_id)
         docs = assignments_ref.where(
             filter=make_filter("user_id", "==", user_id)
         ).stream()
@@ -111,27 +112,27 @@ class FirestoreAssignmentRepository(AssignmentRepository):
             stored_assignment.to_domain() for stored_assignment in stored_assignments
         ]
 
-    def schedule_assignment(self, id: str, when: datetime) -> None:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+    def schedule_assignment(self, user_id: str, id: str, when: datetime) -> None:
+        doc_ref = self._get_collection_ref(user_id).document(id)
         doc_ref.update({"scheduled_for": when})
 
-    def publish_assignment(self, id: str, when: datetime) -> None:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+    def publish_assignment(self, user_id: str, id: str, when: datetime) -> None:
+        doc_ref = self._get_collection_ref(user_id).document(id)
         expired_at = when + self.expiration_delay
         doc_ref.update({"published_at": when, "expired_at": expired_at})
 
-    def notify_user(self, id: str, when: datetime) -> None:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+    def notify_user(self, user_id: str, id: str, when: datetime) -> None:
+        doc_ref = self._get_collection_ref(user_id).document(id)
         doc_ref.update({"notified_at": firestore.ArrayUnion([when])})
 
-    def open_assignment(self, id: str, when: datetime) -> None:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+    def open_assignment(self, user_id: str, id: str, when: datetime) -> None:
+        doc_ref = self._get_collection_ref(user_id).document(id)
         doc_ref.update({"opened_at": firestore.ArrayUnion([when])})
 
     def submit_assignment(
-        self, id: str, when: datetime, answers: List[AnswerType]
+        self, user_id: str, id: str, when: datetime, answers: List[AnswerType]
     ) -> None:
-        doc_ref = self.client.collection(self.collection_name).document(id)
+        doc_ref = self._get_collection_ref(user_id).document(id)
         doc_ref.update(
             {
                 "submitted_at": when,
@@ -139,10 +140,10 @@ class FirestoreAssignmentRepository(AssignmentRepository):
             }
         )
 
-    def get_pending_assignments(
+    def list_pending_assignments(
         self, user_id: str, ref_time: datetime
     ) -> List[Assignment]:
-        assignments_ref = self.client.collection(self.collection_name)
+        assignments_ref = self._get_collection_ref(user_id)
         docs = (
             assignments_ref.where(filter=make_filter("user_id", "==", user_id))
             .where(filter=make_filter("expired_at", ">", ref_time))
@@ -155,3 +156,10 @@ class FirestoreAssignmentRepository(AssignmentRepository):
         return [
             stored_assignment.to_domain() for stored_assignment in stored_assignments
         ]
+
+    def _get_collection_ref(self, user_id: str) -> firestore.CollectionReference:
+        return (
+            self.client.collection(self.user_collection_name)
+            .document(user_id)
+            .collection(self.collection_name)
+        )

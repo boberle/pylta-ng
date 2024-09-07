@@ -19,14 +19,17 @@ def test_get_assignment(empty_assignment_repository: AssignmentRepository) -> No
         user_id=assignment.user_id,
         created_at=assignment.created_at,
     )
-    assert empty_assignment_repository.get_assignment(assignment.id) == assignment
+    assert (
+        empty_assignment_repository.get_assignment(assignment.user_id, assignment.id)
+        == assignment
+    )
 
 
 def test_get_assignment_not_found(
     empty_assignment_repository: AssignmentRepository,
 ) -> None:
     with pytest.raises(AssignmentNotFound):
-        empty_assignment_repository.get_assignment("nonexistent")
+        empty_assignment_repository.get_assignment("user1", "nonexistent")
 
 
 def test_list_assignments(empty_assignment_repository: AssignmentRepository) -> None:
@@ -77,9 +80,13 @@ def test_schedule_assignment(empty_assignment_repository: AssignmentRepository) 
         created_at=assignment.created_at,
     )
     scheduled_for = datetime.now(tz=timezone.utc) + timedelta(minutes=1)
-    empty_assignment_repository.schedule_assignment(assignment.id, scheduled_for)
+    empty_assignment_repository.schedule_assignment(
+        assignment.user_id, assignment.id, scheduled_for
+    )
 
-    got_assignment = empty_assignment_repository.get_assignment(assignment.id)
+    got_assignment = empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    )
     assert got_assignment.scheduled_for == scheduled_for
 
 
@@ -98,9 +105,13 @@ def test_publish_assignment(empty_assignment_repository: AssignmentRepository) -
     )
     published_at = datetime.now(tz=timezone.utc) + timedelta(minutes=1)
     expired_at = published_at + timedelta(hours=1)
-    empty_assignment_repository.publish_assignment(assignment.id, published_at)
+    empty_assignment_repository.publish_assignment(
+        assignment.user_id, assignment.id, published_at
+    )
 
-    got_assignment = empty_assignment_repository.get_assignment(assignment.id)
+    got_assignment = empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    )
     assert got_assignment.published_at == published_at
     assert got_assignment.expired_at == expired_at
 
@@ -119,14 +130,16 @@ def test_notify_user(empty_assignment_repository: AssignmentRepository) -> None:
         created_at=assignment.created_at,
     )
     when = datetime.now(tz=timezone.utc)
-    empty_assignment_repository.notify_user(assignment.id, when)
-    assert empty_assignment_repository.get_assignment(assignment.id).notified_at == [
-        when
-    ]
+    empty_assignment_repository.notify_user(assignment.user_id, assignment.id, when)
+    assert empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    ).notified_at == [when]
 
     when2 = when + timedelta(minutes=1)
-    empty_assignment_repository.notify_user(assignment.id, when2)
-    assert empty_assignment_repository.get_assignment(assignment.id).notified_at == [
+    empty_assignment_repository.notify_user(assignment.user_id, assignment.id, when2)
+    assert empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    ).notified_at == [
         when,
         when2,
     ]
@@ -146,12 +159,18 @@ def test_open_assignment(empty_assignment_repository: AssignmentRepository) -> N
         created_at=assignment.created_at,
     )
     when = datetime.now(tz=timezone.utc)
-    empty_assignment_repository.open_assignment(assignment.id, when)
-    assert empty_assignment_repository.get_assignment(assignment.id).opened_at == [when]
+    empty_assignment_repository.open_assignment(assignment.user_id, assignment.id, when)
+    assert empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    ).opened_at == [when]
 
     when2 = when + timedelta(minutes=1)
-    empty_assignment_repository.open_assignment(assignment.id, when2)
-    assert empty_assignment_repository.get_assignment(assignment.id).opened_at == [
+    empty_assignment_repository.open_assignment(
+        assignment.user_id, assignment.id, when2
+    )
+    assert empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    ).opened_at == [
         when,
         when2,
     ]
@@ -178,9 +197,14 @@ def test_submit_assignment(empty_assignment_repository: AssignmentRepository) ->
     ]
     when = datetime.now(tz=timezone.utc)
     empty_assignment_repository.submit_assignment(
-        assignment.id, when=when, answers=answers
+        assignment.user_id,
+        assignment.id,
+        when=when,
+        answers=answers,
     )
-    got_assignment = empty_assignment_repository.get_assignment(assignment.id)
+    got_assignment = empty_assignment_repository.get_assignment(
+        assignment.user_id, assignment.id
+    )
     assert got_assignment.submitted_at == when
     assert got_assignment.answers == answers
 
@@ -245,28 +269,39 @@ def test_get_pending_assignments(
             created_at=assignment.created_at,
         )
     empty_assignment_repository.publish_assignment(
-        published_and_expired_assignment.id, published_time_of_expired_assignment
+        published_and_expired_assignment.user_id,
+        published_and_expired_assignment.id,
+        published_time_of_expired_assignment,
     )
     empty_assignment_repository.publish_assignment(
-        published_and_answered_assignment.id, published_time
+        published_and_answered_assignment.user_id,
+        published_and_answered_assignment.id,
+        published_time,
     )
     empty_assignment_repository.publish_assignment(
-        published_and_pending_assignment_user1_a.id, published_time
+        published_and_pending_assignment_user1_a.user_id,
+        published_and_pending_assignment_user1_a.id,
+        published_time,
     )
     empty_assignment_repository.publish_assignment(
-        published_and_pending_assignment_user1_b.id, published_time
+        published_and_pending_assignment_user1_b.user_id,
+        published_and_pending_assignment_user1_b.id,
+        published_time,
     )
     empty_assignment_repository.publish_assignment(
-        published_and_pending_assignment_user2.id, published_time
+        published_and_pending_assignment_user2.user_id,
+        published_and_pending_assignment_user2.id,
+        published_time,
     )
 
     empty_assignment_repository.submit_assignment(
+        published_and_answered_assignment.user_id,
         published_and_answered_assignment.id,
         when=answer_time,
         answers=["Excellent", [3, 4], 5],
     )
 
-    got_pending_assignments = empty_assignment_repository.get_pending_assignments(
+    got_pending_assignments = empty_assignment_repository.list_pending_assignments(
         "user1", lookup_time
     )
     got_pending_assignment_ids = [
