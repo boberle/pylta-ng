@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import date, time
 from typing import Literal
 
 import pydantic
@@ -20,8 +20,8 @@ class StoredSchedule(BaseModel):
     revision: Literal[1] = 1
     id: str
     survey_id: str
-    start_date: datetime
-    end_date: datetime
+    start_date: date
+    end_date: date
     time_ranges: list[str]
     user_ids: list[str] = Field(default_factory=list)
     group_ids: list[str] = Field(default_factory=list)
