@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, time
+from datetime import date, datetime, time, timezone
 from typing import Literal
 
 import pydantic
@@ -14,14 +14,17 @@ from lta.domain.schedule_repository import (
     ScheduleNotFound,
     ScheduleRepository,
 )
+from lta.infra.repositories.firestore.utils import make_filter
 
 
 class StoredSchedule(BaseModel):
     revision: Literal[1] = 1
     id: str
     survey_id: str
-    start_date: date
-    end_date: date
+    # let Firestore use datetime since it can't store date objects
+    # (datetime objects are easier to compare than strings)
+    start_date: datetime
+    end_date: datetime
     time_ranges: list[str]
     user_ids: list[str] = Field(default_factory=list)
     group_ids: list[str] = Field(default_factory=list)
@@ -35,8 +38,12 @@ class StoredSchedule(BaseModel):
         return StoredSchedule(
             id=schedule.id,
             survey_id=schedule.survey_id,
-            start_date=schedule.start_date,
-            end_date=schedule.end_date,
+            start_date=datetime.combine(
+                schedule.start_date, time(0, 0), tzinfo=timezone.utc
+            ),
+            end_date=datetime.combine(
+                schedule.end_date, time(0, 0), tzinfo=timezone.utc
+            ),
             time_ranges=time_ranges,
             user_ids=schedule.user_ids,
             group_ids=schedule.group_ids,
@@ -53,8 +60,8 @@ class StoredSchedule(BaseModel):
         return Schedule(
             id=self.id,
             survey_id=self.survey_id,
-            start_date=self.start_date,
-            end_date=self.end_date,
+            start_date=self.start_date.date(),
+            end_date=self.end_date.date(),
             time_ranges=time_ranges,
             user_ids=self.user_ids,
             group_ids=self.group_ids,
@@ -92,7 +99,24 @@ class FirestoreScheduleRepository(ScheduleRepository):
 
     def list_schedules(self) -> list[Schedule]:
         collection_ref = self.client.collection(self.collection_name)
-        docs = collection_ref.stream()
+        docs = collection_ref.order_by(
+            "start_date", direction=firestore.Query.DESCENDING
+        ).stream()
+        stored_schedules = (
+            pydantic.TypeAdapter(StoredSchedule).validate_python(doc.to_dict())
+            for doc in docs
+        )
+        return [stored_schedule.to_domain() for stored_schedule in stored_schedules]
+
+    def list_active_schedules(self, ref_date: date) -> list[Schedule]:
+        collection_ref = self.client.collection(self.collection_name)
+        ref_dt = datetime.combine(ref_date, time(0, 0), tzinfo=timezone.utc)
+        docs = (
+            collection_ref.where(filter=make_filter("start_date", "<=", ref_dt))
+            .where(filter=make_filter("end_date", ">=", ref_dt))
+            .order_by("start_date", direction=firestore.Query.DESCENDING)
+            .stream()
+        )
         stored_schedules = (
             pydantic.TypeAdapter(StoredSchedule).validate_python(doc.to_dict())
             for doc in docs

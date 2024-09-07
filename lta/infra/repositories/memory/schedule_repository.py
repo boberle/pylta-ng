@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date
 
 from lta.domain.schedule import Schedule
 from lta.domain.schedule_repository import (
@@ -29,4 +30,19 @@ class InMemoryScheduleRepository(ScheduleRepository):
             del self.schedules[id]
 
     def list_schedules(self) -> list[Schedule]:
-        return list(self.schedules.values())
+        return sorted(
+            self.schedules.values(),
+            key=lambda schedule: schedule.start_date,
+            reverse=True,
+        )
+
+    def list_active_schedules(self, ref_date: date) -> list[Schedule]:
+        return sorted(
+            [
+                schedule
+                for schedule in self.schedules.values()
+                if schedule.start_date <= ref_date <= schedule.end_date
+            ],
+            key=lambda schedule: schedule.start_date,
+            reverse=True,
+        )

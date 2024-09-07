@@ -34,3 +34,6 @@ class ScheduleRepository(Protocol):
 
     @abstractmethod
     def list_schedules(self) -> list[Schedule]: ...
+
+    @abstractmethod
+    def list_active_schedules(self, ref_date: date) -> list[Schedule]: ...
