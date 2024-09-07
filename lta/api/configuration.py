@@ -8,7 +8,13 @@ import google.cloud.firestore
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from lta.domain.assignment_repository import AssignmentRepository
+from lta.domain.survey_repository import SurveyRepository
 from lta.domain.user_repository import UserRepository
+from lta.infra.repositories.firestore.assignment_repository import (
+    FirestoreAssignmentRepository,
+)
+from lta.infra.repositories.firestore.survey_repository import FirestoreSurveyRepository
 from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
 
 
@@ -16,6 +22,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "dummy-project"
     ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
     ADMIN_EMAIL_ADDRESSES: list[str] = Field(default_factory=list)
+    ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE: int = 20
 
     model_config = SettingsConfigDict(env_file="settings/env.dev")
 
@@ -33,6 +40,22 @@ class AppConfiguration:
         return FirestoreUserRepository(
             client=self.firestore_client,
         )
+
+    @cached_property
+    def assignment_repository(self) -> AssignmentRepository:
+        return FirestoreAssignmentRepository(
+            client=self.firestore_client,
+        )
+
+    @cached_property
+    def survey_repository(self) -> SurveyRepository:
+        return FirestoreSurveyRepository(
+            client=self.firestore_client,
+        )
+
+    @cached_property
+    def assignment_limit_on_app_home_page(self) -> int:
+        return _settings.ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
 
 
 _settings = Settings()
