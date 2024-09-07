@@ -28,7 +28,7 @@ def empty_firestore_group_repository() -> Generator[GroupRepository, None, None]
 
 @pytest.fixture
 def empty_memory_group_repository() -> GroupRepository:
-    return InMemoryGroupRepository(groups={})
+    return InMemoryGroupRepository()
 
 
 @pytest.fixture(params=["memory", "firestore"])

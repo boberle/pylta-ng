@@ -112,7 +112,7 @@ def empty_firestore_survey_repository() -> Generator[SurveyRepository, None, Non
 
 @pytest.fixture
 def empty_memory_survey_repository() -> SurveyRepository:
-    return InMemorySurveyRepository(surveys={})
+    return InMemorySurveyRepository()
 
 
 @pytest.fixture(params=["memory", "firestore"])

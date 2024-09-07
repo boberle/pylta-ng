@@ -65,7 +65,7 @@ def empty_firestore_user_repository() -> Generator[UserRepository, None, None]:
 
 @pytest.fixture
 def empty_memory_user_repository() -> UserRepository:
-    return InMemoryUserRepository(users={})
+    return InMemoryUserRepository()
 
 
 @pytest.fixture(params=["memory", "firestore"])
