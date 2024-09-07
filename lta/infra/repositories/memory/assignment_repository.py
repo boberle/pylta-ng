@@ -34,12 +34,21 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         )
         self.assignments[user_id][id] = assignment
 
-    def list_assignments(self, user_id: str) -> List[Assignment]:
-        return [
+    def list_assignments(
+        self, user_id: str, limit: int | None = None
+    ) -> List[Assignment]:
+        assignments = [
             assignment
             for assignment in self.assignments[user_id].values()
             if assignment.user_id == user_id
         ]
+        assignments = sorted(assignments, key=lambda x: x.created_at, reverse=True)
+        if limit is not None:
+            assignments = assignments[:limit]
+        return assignments
+
+    def count_assignments(self, user_id: str) -> int:
+        return len(self.assignments[user_id])
 
     def schedule_assignment(
         self, user_id: str, assignment_id: str, when: datetime
@@ -74,13 +83,28 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         assignment.answers = answers
 
     def list_pending_assignments(
-        self, user_id: str, ref_date: datetime
+        self, user_id: str, ref_time: datetime
     ) -> List[Assignment]:
-        return [
+        assignments = [
             assignment
             for assignment in self.assignments[user_id].values()
             if assignment.user_id == user_id
             and assignment.expired_at is not None
-            and assignment.expired_at > ref_date
+            and assignment.expired_at > ref_time
             and assignment.submitted_at is None
         ]
+        return sorted(assignments, key=lambda x: x.created_at, reverse=True)
+
+    def get_next_pending_assignment(
+        self, user_id: str, ref_time: datetime
+    ) -> Assignment | None:
+        pending_assignments = self.list_pending_assignments(user_id, ref_time=ref_time)
+        if pending_assignments:
+            return pending_assignments[-1]
+        return None
+
+    def count_non_answered_assignments(self, user_id: str) -> int:
+        return sum(
+            not bool(assignment.submitted_at)
+            for assignment in self.assignments[user_id].values()
+        )

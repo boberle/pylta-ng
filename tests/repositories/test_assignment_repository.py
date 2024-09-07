@@ -32,38 +32,57 @@ def test_get_assignment_not_found(
         empty_assignment_repository.get_assignment("user1", "nonexistent")
 
 
-def test_list_assignments(empty_assignment_repository: AssignmentRepository) -> None:
+def test_list_and_count_assignments(
+    empty_assignment_repository: AssignmentRepository,
+) -> None:
+    ref_time = datetime.now(tz=timezone.utc)
     assignment1 = Assignment(
         id="1",
         survey_id="survey1",
         user_id="user1",
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=ref_time,
     )
     assignment2 = Assignment(
         id="2",
-        survey_id="survey2",
+        survey_id="survey1",
         user_id="user1",
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=ref_time - timedelta(minutes=10),
     )
     assignment3 = Assignment(
         id="3",
-        survey_id="survey3",
-        user_id="user2",
-        created_at=datetime.now(tz=timezone.utc),
+        survey_id="survey1",
+        user_id="user1",
+        created_at=ref_time + timedelta(minutes=10),
     )
-    for assignment in [assignment1, assignment2, assignment3]:
+    assignment4 = Assignment(
+        id="4",
+        survey_id="survey1",
+        user_id="user2",
+        created_at=ref_time,
+    )
+    for assignment in [assignment1, assignment2, assignment3, assignment4]:
         empty_assignment_repository.create_assignment(
             id=assignment.id,
             survey_id=assignment.survey_id,
             user_id=assignment.user_id,
             created_at=assignment.created_at,
         )
+
     assert empty_assignment_repository.list_assignments("user1") == [
+        assignment3,
         assignment1,
         assignment2,
     ]
-    assert empty_assignment_repository.list_assignments("user2") == [assignment3]
+    assert empty_assignment_repository.list_assignments("user1", limit=2) == [
+        assignment3,
+        assignment1,
+    ]
+    assert empty_assignment_repository.list_assignments("user2") == [assignment4]
     assert empty_assignment_repository.list_assignments("user3") == []
+
+    assert empty_assignment_repository.count_assignments("user1") == 3
+    assert empty_assignment_repository.count_assignments("user2") == 1
+    assert empty_assignment_repository.count_assignments("user3") == 0
 
 
 def test_schedule_assignment(empty_assignment_repository: AssignmentRepository) -> None:
@@ -209,7 +228,7 @@ def test_submit_assignment(empty_assignment_repository: AssignmentRepository) ->
     assert got_assignment.answers == answers
 
 
-def test_get_pending_assignments(
+def test_list_pending_assignments(
     empty_assignment_repository: AssignmentRepository,
 ) -> None:
     ref_time = datetime.now(tz=timezone.utc)
@@ -246,10 +265,16 @@ def test_get_pending_assignments(
         id="5",
         survey_id="survey1",
         user_id="user1",
-        created_at=ref_time,
+        created_at=ref_time - timedelta(minutes=10),
+    )
+    published_and_pending_assignment_user1_c = Assignment(
+        id="6",
+        survey_id="survey1",
+        user_id="user1",
+        created_at=ref_time + timedelta(minutes=10),
     )
     published_and_pending_assignment_user2 = Assignment(
-        id="6",
+        id="7",
         survey_id="survey1",
         user_id="user2",
         created_at=ref_time,
@@ -260,6 +285,7 @@ def test_get_pending_assignments(
         non_published_assignment,
         published_and_pending_assignment_user1_a,
         published_and_pending_assignment_user1_b,
+        published_and_pending_assignment_user1_c,
         published_and_pending_assignment_user2,
     ]:
         empty_assignment_repository.create_assignment(
@@ -289,6 +315,11 @@ def test_get_pending_assignments(
         published_time,
     )
     empty_assignment_repository.publish_assignment(
+        published_and_pending_assignment_user1_c.user_id,
+        published_and_pending_assignment_user1_c.id,
+        published_time,
+    )
+    empty_assignment_repository.publish_assignment(
         published_and_pending_assignment_user2.user_id,
         published_and_pending_assignment_user2.id,
         published_time,
@@ -301,13 +332,190 @@ def test_get_pending_assignments(
         answers=["Excellent", [3, 4], 5],
     )
 
-    got_pending_assignments = empty_assignment_repository.list_pending_assignments(
-        "user1", lookup_time
+    got_pending_assignment_ids = list(
+        map(
+            lambda x: x.id,
+            empty_assignment_repository.list_pending_assignments("user1", lookup_time),
+        )
     )
-    got_pending_assignment_ids = [
-        assignment.id for assignment in got_pending_assignments
-    ]
     assert got_pending_assignment_ids == [
+        published_and_pending_assignment_user1_c.id,
         published_and_pending_assignment_user1_a.id,
         published_and_pending_assignment_user1_b.id,
     ]
+
+    assert list(
+        map(
+            lambda x: x.id,
+            empty_assignment_repository.list_pending_assignments("user2", lookup_time),
+        )
+    ) == [published_and_pending_assignment_user2.id]
+
+    got_pending_assignment = empty_assignment_repository.get_next_pending_assignment(
+        "user1", lookup_time
+    )
+    assert got_pending_assignment is not None
+    assert got_pending_assignment.id == published_and_pending_assignment_user1_b.id
+
+    got_pending_assignment = empty_assignment_repository.get_next_pending_assignment(
+        "user2", lookup_time
+    )
+    assert got_pending_assignment is not None
+    assert got_pending_assignment.id == published_and_pending_assignment_user2.id
+
+    assert (
+        empty_assignment_repository.get_next_pending_assignment("user3", lookup_time)
+        is None
+    )
+
+
+def test_count_non_answered_assignments(
+    empty_assignment_repository: AssignmentRepository,
+) -> None:
+    assignment1 = Assignment(
+        id="1",
+        survey_id="survey1",
+        user_id="user1",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    assignment2 = Assignment(
+        id="2",
+        survey_id="survey2",
+        user_id="user1",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    assignment3 = Assignment(
+        id="3",
+        survey_id="survey2",
+        user_id="user1",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    assignment4 = Assignment(
+        id="4",
+        survey_id="survey2",
+        user_id="user2",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    for assignment in [assignment1, assignment2, assignment3, assignment4]:
+        empty_assignment_repository.create_assignment(
+            id=assignment.id,
+            survey_id=assignment.survey_id,
+            user_id=assignment.user_id,
+            created_at=assignment.created_at,
+        )
+
+    empty_assignment_repository.submit_assignment(
+        assignment1.user_id,
+        assignment1.id,
+        when=datetime.now(tz=timezone.utc),
+        answers=["Excellent", [3, 4], 5],
+    )
+
+    assert empty_assignment_repository.count_non_answered_assignments("user1") == 2
+    assert empty_assignment_repository.count_non_answered_assignments("user2") == 1
+    assert empty_assignment_repository.count_non_answered_assignments("user3") == 0
+
+
+def test_assignment_is_own_by_user(
+    empty_assignment_repository: AssignmentRepository,
+) -> None:
+    """
+    This test checks that the assignment request is owned by the user. In other terms, that `user_id` in the parameter
+    of the method match the `user_id` in the assignment.
+
+    To test that all the AssignmentRepository methods are checked, and to prevent any oversight when adding a new method,
+    all methods checked (or ignored, for some methods, this test doesn't make sense) are listed in the `checked` set below.
+    """
+    checked = {
+        "count_assignments",
+        "count_non_answered_assignments",
+        "create_assignment",
+        "get_assignment",
+        "list_assignments",
+        "list_pending_assignments",
+        "notify_user",
+        "open_assignment",
+        "publish_assignment",
+        "schedule_assignment",
+        "submit_assignment",
+        "get_next_pending_assignment",
+    }
+    assert (
+        set(filter(lambda attr: not attr.startswith("_"), dir(AssignmentRepository)))
+        == checked
+    )
+
+    assignment1 = Assignment(
+        id="1",
+        survey_id="survey1",
+        user_id="user1",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    assignment2 = Assignment(
+        id="2",
+        survey_id="survey2",
+        user_id="user2",
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    for assignment in [assignment1, assignment2]:
+        empty_assignment_repository.create_assignment(
+            id=assignment.id,
+            survey_id=assignment.survey_id,
+            user_id=assignment.user_id,
+            created_at=assignment.created_at,
+        )
+
+    # get
+    assert empty_assignment_repository.get_assignment(
+        assignment1.user_id, assignment1.id
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.get_assignment(assignment2.user_id, assignment1.id)
+
+    ref_time = datetime.now(tz=timezone.utc)
+
+    # schedule
+    empty_assignment_repository.schedule_assignment(
+        assignment1.user_id, assignment1.id, ref_time
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.schedule_assignment(
+            assignment2.user_id, assignment1.id, ref_time
+        )
+
+    # publish
+    empty_assignment_repository.publish_assignment(
+        assignment1.user_id, assignment1.id, ref_time
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.publish_assignment(
+            assignment2.user_id, assignment1.id, ref_time
+        )
+
+    # notify
+    empty_assignment_repository.notify_user(
+        assignment1.user_id, assignment1.id, ref_time
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.notify_user(
+            assignment2.user_id, assignment1.id, ref_time
+        )
+
+    # open
+    empty_assignment_repository.open_assignment(
+        assignment1.user_id, assignment1.id, ref_time
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.open_assignment(
+            assignment2.user_id, assignment1.id, ref_time
+        )
+
+    # submit
+    answers: list[AnswerType] = ["Excellent", [3, 4], 5]
+    empty_assignment_repository.submit_assignment(
+        assignment1.user_id, assignment1.id, ref_time, answers=answers
+    )
+    with pytest.raises(AssignmentNotFound):
+        empty_assignment_repository.submit_assignment(
+            assignment2.user_id, assignment1.id, ref_time, answers=answers
+        )
