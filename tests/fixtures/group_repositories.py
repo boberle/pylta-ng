@@ -8,9 +8,28 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
+from lta.domain.group import Group
 from lta.domain.group_repository import GroupRepository
 from lta.infra.repositories.firestore.group_repository import FirestoreGroupRepository
 from lta.infra.repositories.memory.group_repository import InMemoryGroupRepository
+
+
+@pytest.fixture()
+def prefilled_memory_group_repository() -> InMemoryGroupRepository:
+    return InMemoryGroupRepository(
+        {
+            "group1": Group(
+                id="group1",
+                name="Group 1",
+                user_ids=["user1", "user2"],
+            ),
+            "group2": Group(
+                id="group2",
+                name="Group 2",
+                user_ids=["user2", "user3"],
+            ),
+        }
+    )
 
 
 @pytest.fixture

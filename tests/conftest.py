@@ -8,6 +8,7 @@ from tests.fixtures.group_repositories import (  # noqa:F401
     empty_firestore_group_repository,
     empty_group_repository,
     empty_memory_group_repository,
+    prefilled_memory_group_repository,
 )
 from tests.fixtures.schedule_repositories import (  # noqa:F401
     empty_firestore_schedule_repository,

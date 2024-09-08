@@ -24,14 +24,14 @@ def prefilled_memory_user_repository() -> UserRepository:
                 email_address="user1@idontexist.net",
                 devices=[
                     Device(
-                        token="device1",
+                        token="user1_device1",
                         os=DeviceOS.ANDROID,
                         version="1",
                         first_connection=datetime(2024, 1, 1),
                         last_connection=datetime(2024, 1, 2),
                     ),
                     Device(
-                        token="device2",
+                        token="user1_device2",
                         os=DeviceOS.IOS,
                         version="1",
                         first_connection=datetime(2024, 1, 1),
@@ -43,8 +43,22 @@ def prefilled_memory_user_repository() -> UserRepository:
             "user2": User(
                 id="user2",
                 email_address="user2@idontexist.net",
-                devices=[],
+                devices=[
+                    Device(
+                        token="user2_device1",
+                        os=DeviceOS.ANDROID,
+                        version="1",
+                        first_connection=datetime(2024, 1, 1),
+                        last_connection=datetime(2024, 1, 2),
+                    ),
+                ],
                 created_at=datetime(2022, 2, 2),
+            ),
+            "user3": User(
+                id="user3",
+                email_address="user3@idontexist.net",
+                devices=[],
+                created_at=datetime(2022, 3, 3),
             ),
         }
     )

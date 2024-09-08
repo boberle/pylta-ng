@@ -1,4 +1,5 @@
 import urllib.request
+from datetime import date, time
 from typing import Any, Generator
 
 import pytest
@@ -8,6 +9,7 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
+from lta.domain.schedule import Schedule, TimeRange
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.infra.repositories.firestore.schedule_repository import (
     FirestoreScheduleRepository,
@@ -17,7 +19,32 @@ from lta.infra.repositories.memory.schedule_repository import InMemoryScheduleRe
 
 @pytest.fixture()
 def prefilled_memory_schedule_repository() -> InMemoryScheduleRepository:
-    raise NotImplementedError("Not implemented")
+    return InMemoryScheduleRepository(
+        {
+            "schedule1": Schedule(
+                id="1",
+                survey_id="survey1",
+                start_date=date(2023, 1, 1),
+                end_date=date(2023, 1, 7),
+                time_ranges=[
+                    TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
+                    TimeRange(start_time=time(14, 0, 0), end_time=time(15, 0, 0)),
+                ],
+                group_ids=["group1"],
+            ),
+            "schedule2": Schedule(
+                id="2",
+                survey_id="survey2",
+                start_date=date(2023, 2, 1),
+                end_date=date(2023, 2, 7),
+                time_ranges=[
+                    TimeRange(start_time=time(10, 0, 0), end_time=time(11, 0, 0)),
+                    TimeRange(start_time=time(15, 0, 0), end_time=time(16, 0, 0)),
+                ],
+                group_ids=["user2"],
+            ),
+        }
+    )
 
 
 @pytest.fixture
