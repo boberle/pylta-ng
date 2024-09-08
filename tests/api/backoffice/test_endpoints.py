@@ -43,6 +43,11 @@ def test_list_users(test_client: TestClient) -> None:
                 "id": "user2",
                 "created_at": "2022-02-02T00:00:00",
             },
+            {
+                "email_address": "user3@idontexist.net",
+                "id": "user3",
+                "created_at": "2022-03-03T00:00:00",
+            },
         ]
     }
 
@@ -57,11 +62,11 @@ def test_get_user(test_client: TestClient) -> None:
         "devices": [
             {
                 "last_connection": "2024-01-02T00:00:00",
-                "token": "device1",
+                "token": "user1_device1",
             },
             {
                 "last_connection": "2024-01-03T00:00:00",
-                "token": "device2",
+                "token": "user1_device2",
             },
         ],
     }
