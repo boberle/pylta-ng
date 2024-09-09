@@ -4,8 +4,10 @@ from lta.domain.assignment import Assignment
 from lta.infra.repositories.memory.assignment_repository import (
     InMemoryAssignmentRepository,
 )
-from lta.infra.scheduler.notification_publisher import RecordingNotificationPublisher
-from lta.infra.scheduler.notification_scheduler import (
+from lta.infra.scheduler.recording.notification_publisher import (
+    RecordingNotificationPublisher,
+)
+from lta.infra.scheduler.recording.notification_scheduler import (
     RecordingDirectNotificationScheduler,
 )
 

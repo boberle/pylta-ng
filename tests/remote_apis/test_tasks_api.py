@@ -40,6 +40,27 @@ def test_generate_task_id_invalid_args(args: list[Any]) -> None:
         CloudTasksAPI.generate_task_id(*args)
 
 
+@pytest.mark.parametrize(
+    "url,exp",
+    [
+        (
+            "https://example.com/page?param1=value1&param2=value2",
+            "https://example.com/page",
+        ),
+        ("https://example.com/page", "https://example.com/page"),
+        ("https://example.com/page#section", "https://example.com/page"),
+        (
+            "https://example.com/page/subpage?param=value",
+            "https://example.com/page/subpage",
+        ),
+        ("https://example.com/?param=value", "https://example.com/"),
+        ("https://example.com?param=value", "https://example.com"),
+    ],
+)
+def test_remove_query_params(url: str, exp: str) -> None:
+    assert CloudTasksAPI.remove_query_params(url) == exp
+
+
 @pytest.fixture
 def cloud_tasks_api() -> CloudTasksAPI:
     client = MagicMock(spec=tasks_v2.CloudTasksClient)

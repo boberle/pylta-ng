@@ -1,6 +1,8 @@
 from lta.domain.scheduler.notification_service import NotificationService
 from lta.domain.user_repository import UserRepository
-from lta.infra.scheduler.notification_publisher import RecordingNotificationPublisher
+from lta.infra.scheduler.recording.notification_publisher import (
+    RecordingNotificationPublisher,
+)
 
 
 def test_notify_user(prefilled_memory_user_repository: UserRepository) -> None:

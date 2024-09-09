@@ -13,17 +13,25 @@ from lta.api.configuration import (
 from lta.domain.assignment import Assignment
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
-from lta.domain.scheduler.assignment_service import AssignmentService
+from lta.domain.scheduler.assignment_service import (
+    AssignmentService,
+    BasicAssignmentService,
+)
 from lta.domain.scheduler.notification_service import NotificationService
-from lta.domain.scheduler.scheduler_service import SchedulerService
+from lta.domain.scheduler.scheduler_service import (
+    BasicSchedulerService,
+    SchedulerService,
+)
 from lta.domain.survey_repository import SurveyRepository
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.memory.assignment_repository import (
     InMemoryAssignmentRepository,
 )
-from lta.infra.scheduler.assignment_scheduler import DirectAssignmentScheduler
-from lta.infra.scheduler.notification_publisher import RecordingNotificationPublisher
-from lta.infra.scheduler.notification_scheduler import (
+from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentScheduler
+from lta.infra.scheduler.recording.notification_publisher import (
+    RecordingNotificationPublisher,
+)
+from lta.infra.scheduler.recording.notification_scheduler import (
     RecordingDirectNotificationScheduler,
 )
 from tests.services.asserts_scheduler_service import (
@@ -83,7 +91,7 @@ def test_client(
     notification_scheduler: RecordingDirectNotificationScheduler,
 ) -> TestClient:
 
-    assignment_service = AssignmentService(
+    assignment_service = BasicAssignmentService(
         notification_scheduler=notification_scheduler,
         assignment_repository=assignment_repository,
         survey_repository=prefilled_memory_survey_repository,
@@ -95,7 +103,7 @@ def test_client(
         assignment_service=assignment_service,
     )
 
-    scheduler_service = SchedulerService(
+    scheduler_service = BasicSchedulerService(
         assignment_scheduler=assignment_scheduler,
         schedule_repository=prefilled_memory_schedule_repository,
         group_repository=prefilled_memory_group_repository,

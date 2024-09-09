@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
@@ -32,7 +33,7 @@ class CloudTasksAPI:
                 body=json.dumps(payload).encode(),
                 oidc_token=tasks_v2.OidcToken(
                     service_account_email=str(self.service_account_email),
-                    audience=str(self.url),
+                    audience=self.remove_query_params(str(self.url)),
                 ),
             ),
             name=(
@@ -73,3 +74,10 @@ class CloudTasksAPI:
             else:
                 raise ValueError(f"Unsupported argument type: {type(arg)}")
         return "-".join(chunks)
+
+    @staticmethod
+    def remove_query_params(url: str) -> str:
+        parsed_url = urlparse(url)
+        return urlunparse(
+            (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
+        )

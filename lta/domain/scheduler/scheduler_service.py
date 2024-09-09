@@ -1,15 +1,21 @@
 import random
+from abc import abstractmethod
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timezone
-from typing import Generator
+from datetime import date, datetime, time, timedelta, timezone
+from typing import Generator, Protocol
 
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
 
 
+class SchedulerService(Protocol):
+    @abstractmethod
+    def schedule_assignments_for_date(self, ref_date: date) -> None: ...
+
+
 @dataclass
-class SchedulerService:
+class BasicSchedulerService:
     assignment_scheduler: AssignmentScheduler
     schedule_repository: ScheduleRepository
     group_repository: GroupRepository
@@ -26,9 +32,11 @@ class SchedulerService:
                 ):
                     t = convert_int_to_time(self.rand.randint(start, end))
                     dt = datetime.combine(ref_date, t, tzinfo=timezone.utc)
-                    self.schedule_assignment(user_id, schedule.survey_id, dt)
+                    self._schedule_assignment(user_id, schedule.survey_id, dt)
 
-    def schedule_assignment(self, user_id: str, survey_id: str, when: datetime) -> None:
+    def _schedule_assignment(
+        self, user_id: str, survey_id: str, when: datetime
+    ) -> None:
         self.assignment_scheduler.schedule_assignment(
             user_id=user_id, survey_id=survey_id, when=when
         )
@@ -43,6 +51,20 @@ class SchedulerService:
             group = self.group_repository.get_group(group_id)
             for user_id in group.user_ids:
                 yield user_id
+
+
+@dataclass
+class TestSchedulerService:
+    assignment_scheduler: AssignmentScheduler
+    test_user_id: str
+    test_survey_id: str
+
+    def schedule_assignments_for_date(self, ref_date: date) -> None:
+        self.assignment_scheduler.schedule_assignment(
+            user_id=self.test_user_id,
+            survey_id=self.test_survey_id,
+            when=datetime.now(tz=timezone.utc) + timedelta(minutes=1),
+        )
 
 
 def convert_time_to_int(t: time) -> int:
