@@ -2,19 +2,32 @@ import os
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache, cached_property
+from urllib.parse import urljoin
 
 import firebase_admin
 import firebase_admin.firestore
 import google.cloud.firestore
-from pydantic import Field
+from google.cloud import tasks_v2
+from pydantic import EmailStr, Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from lta.domain.assignment_repository import AssignmentRepository
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
-from lta.domain.scheduler.assignment_service import AssignmentService
+from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
+from lta.domain.scheduler.assignment_service import (
+    AssignmentService,
+    BasicAssignmentService,
+    TestAssignmentService,
+)
+from lta.domain.scheduler.notification_pulisher import NotificationPublisher
+from lta.domain.scheduler.notification_scheduler import NotificationScheduler
 from lta.domain.scheduler.notification_service import NotificationService
-from lta.domain.scheduler.scheduler_service import SchedulerService
+from lta.domain.scheduler.scheduler_service import (
+    BasicSchedulerService,
+    SchedulerService,
+    TestSchedulerService,
+)
 from lta.domain.survey_repository import SurveyRepository
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.firestore.assignment_repository import (
@@ -26,16 +39,31 @@ from lta.infra.repositories.firestore.schedule_repository import (
 )
 from lta.infra.repositories.firestore.survey_repository import FirestoreSurveyRepository
 from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
-from lta.infra.scheduler.assignment_scheduler import DirectAssignmentScheduler
-from lta.infra.scheduler.notification_publisher import RecordingNotificationPublisher
-from lta.infra.scheduler.notification_scheduler import DirectNotificationScheduler
+from lta.infra.scheduler.expo.notification_publisher import ExpoNotificationPublisher
+from lta.infra.scheduler.google_tasks.assignment_scheduler import (
+    CloudTasksAssignmentScheduler,
+)
+from lta.infra.scheduler.google_tasks.notification_scheduler import (
+    CloudTasksNotificationScheduler,
+)
+from lta.infra.tasks_api import CloudTasksAPI
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "dummy-project"
+    PROJECT_LOCATION: str = "europe-west1"
     ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
     ADMIN_EMAIL_ADDRESSES: list[str] = Field(default_factory=list)
     ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE: int = 20
+    SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES: int = 30
+    CLOUD_TASKS_SERVICE_ACCOUNT_ID: EmailStr = (
+        "tasks@dummy-project.iam.gserviceaccount.com"
+    )
+    NOTIFICATION_TASKS_QUEUE_NAME: str = "send-notifications"
+    SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME: str = "schedule-assignments"
+    SCHEDULER_SERVICE_BASE_URL: HttpUrl = HttpUrl(
+        "https://dummy-project-123.europe-west1.run.app/"
+    )
 
     model_config = SettingsConfigDict(env_file="settings/env.dev")
 
@@ -83,33 +111,95 @@ class AppConfiguration:
         return _settings.ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
 
     @cached_property
+    def expo_notification_publisher(self) -> NotificationPublisher:
+        return ExpoNotificationPublisher()
+
+    @cached_property
     def notification_service(self) -> NotificationService:
         return NotificationService(
-            ios_notification_publisher=RecordingNotificationPublisher(),
-            android_notification_publisher=RecordingNotificationPublisher(),
+            ios_notification_publisher=self.expo_notification_publisher,
+            android_notification_publisher=self.expo_notification_publisher,
             user_repository=self.user_repository,
         )
 
     @cached_property
-    def assignment_service(self) -> AssignmentService:
-        return AssignmentService(
-            assignment_repository=self.assignment_repository,
-            notification_scheduler=DirectNotificationScheduler(
-                user_repository=self.user_repository,
-                notification_service=self.notification_service,
+    def cloud_tasks_notification_scheduler(self) -> NotificationScheduler:
+        return CloudTasksNotificationScheduler(
+            tasks_api=CloudTasksAPI(
+                client=tasks_v2.CloudTasksClient(),
+                url=HttpUrl(
+                    urljoin(str(_settings.SCHEDULER_SERVICE_BASE_URL), "notify-user/")
+                ),
+                project_id=_settings.PROJECT_NAME,
+                location=_settings.PROJECT_LOCATION,
+                queue_name=_settings.NOTIFICATION_TASKS_QUEUE_NAME,
+                service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
             ),
+        )
+
+    @cached_property
+    def assignment_service(self) -> AssignmentService:
+        return BasicAssignmentService(
+            assignment_repository=self.assignment_repository,
+            notification_scheduler=self.cloud_tasks_notification_scheduler,
             survey_repository=self.survey_repository,
-            soon_to_expire_notification_delay=timedelta(minutes=30),
+            soon_to_expire_notification_delay=timedelta(
+                minutes=_settings.SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
+            ),
+        )
+
+    @cached_property
+    def test_assignment_service(self) -> AssignmentService:
+        return TestAssignmentService(
+            notification_scheduler=self.cloud_tasks_notification_scheduler,
+        )
+
+    @cached_property
+    def assignment_scheduler(self) -> AssignmentScheduler:
+        return CloudTasksAssignmentScheduler(
+            tasks_api=CloudTasksAPI(
+                client=tasks_v2.CloudTasksClient(),
+                url=HttpUrl(
+                    urljoin(
+                        str(_settings.SCHEDULER_SERVICE_BASE_URL),
+                        "schedule-assignment/",
+                    )
+                ),
+                project_id=_settings.PROJECT_NAME,
+                location=_settings.PROJECT_LOCATION,
+                queue_name=_settings.SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
+                service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
+            ),
         )
 
     @cached_property
     def scheduler_service(self) -> SchedulerService:
-        return SchedulerService(
-            assignment_scheduler=DirectAssignmentScheduler(
-                assignment_service=self.assignment_service,
-            ),
+        return BasicSchedulerService(
+            assignment_scheduler=self.assignment_scheduler,
             schedule_repository=self.schedule_repository,
             group_repository=self.group_repository,
+        )
+
+    @cached_property
+    def test_scheduler_service(self) -> SchedulerService:
+        return TestSchedulerService(
+            assignment_scheduler=CloudTasksAssignmentScheduler(
+                tasks_api=CloudTasksAPI(
+                    client=tasks_v2.CloudTasksClient(),
+                    url=HttpUrl(
+                        urljoin(
+                            str(_settings.SCHEDULER_SERVICE_BASE_URL),
+                            "schedule-assignment/?test=true",
+                        )
+                    ),
+                    project_id=_settings.PROJECT_NAME,
+                    location=_settings.PROJECT_LOCATION,
+                    queue_name=_settings.SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
+                    service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
+                ),
+            ),
+            test_user_id="test",
+            test_survey_id="test",
         )
 
 
@@ -161,8 +251,16 @@ def get_scheduler_service() -> SchedulerService:
     return _configuration.scheduler_service
 
 
+def get_test_scheduler_service() -> SchedulerService:
+    return _configuration.test_scheduler_service
+
+
 def get_assignment_service() -> AssignmentService:
     return _configuration.assignment_service
+
+
+def get_test_assignment_service() -> AssignmentService:
+    return _configuration.test_assignment_service
 
 
 def get_notification_service() -> NotificationService:
