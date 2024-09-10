@@ -5,6 +5,9 @@ import lta.api.backoffice.endpoints
 import lta.api.scheduler.endpoints
 import lta.api.userapp.endpoints
 from lta.api.configuration import get_allowed_origins
+from lta.log import setup_logging
+
+setup_logging()
 
 app = FastAPI(openapi_url=None)
 
