@@ -1,3 +1,5 @@
+import logging
+
 import requests
 
 from lta.domain.scheduler.notification_pulisher import (
@@ -16,6 +18,8 @@ class ExpoNotificationPublisher(NotificationPublisher):
                 "body": notification.message,
             },
         )
-        print(response.json())
+        logging.info(
+            "Notification: Expo response:", extra=dict(json_fields=response.json())
+        )
         response.raise_for_status()
-        print("Notification sent successfully")
+        logging.info("Notification sent successfully")
