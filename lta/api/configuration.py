@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache, cached_property
+from typing import Literal
 from urllib.parse import urljoin
 
 import firebase_admin
@@ -64,6 +65,7 @@ class Settings(BaseSettings):
     SCHEDULER_SERVICE_BASE_URL: HttpUrl = HttpUrl(
         "https://dummy-project-123.europe-west1.run.app/"
     )
+    APPLICATION_SERVICE: Literal["back", "scheduler", "all"] = "back"
 
     model_config = SettingsConfigDict(env_file="settings/env.dev")
 
@@ -265,3 +267,7 @@ def get_test_assignment_service() -> AssignmentService:
 
 def get_notification_service() -> NotificationService:
     return _configuration.notification_service
+
+
+def get_application_service() -> Literal["back", "scheduler", "all"]:
+    return _settings.APPLICATION_SERVICE
