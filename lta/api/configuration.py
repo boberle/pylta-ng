@@ -300,6 +300,10 @@ def get_application_service() -> Literal["back", "scheduler", "all"]:
     return _settings.APPLICATION_SERVICE
 
 
+def get_survey_repository() -> SurveyRepository:
+    return _configuration.survey_repository
+
+
 def _configure_local_run() -> None:
     if _settings.LOCAL_RUN:
         get_firestore_client(use_emulator=True)
