@@ -40,6 +40,10 @@ from lta.infra.repositories.firestore.schedule_repository import (
 )
 from lta.infra.repositories.firestore.survey_repository import FirestoreSurveyRepository
 from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
+from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentScheduler
+from lta.infra.scheduler.direct.notification_scheduler import (
+    DirectNotificationScheduler,
+)
 from lta.infra.scheduler.expo.notification_publisher import ExpoNotificationPublisher
 from lta.infra.scheduler.google_tasks.assignment_scheduler import (
     CloudTasksAssignmentScheduler,
@@ -66,6 +70,7 @@ class Settings(BaseSettings):
         "https://dummy-project-123.europe-west1.run.app/"
     )
     APPLICATION_SERVICE: Literal["back", "scheduler", "all"] = "back"
+    LOCAL_RUN: bool = False
 
     model_config = SettingsConfigDict(env_file="settings/env.dev")
 
@@ -141,10 +146,21 @@ class AppConfiguration:
         )
 
     @cached_property
+    def direct_notification_scheduler(self) -> NotificationScheduler:
+        return DirectNotificationScheduler(
+            user_repository=self.user_repository,
+            notification_service=self.notification_service,
+        )
+
+    @cached_property
     def assignment_service(self) -> AssignmentService:
+        if _settings.LOCAL_RUN:
+            notification_scheduler = self.direct_notification_scheduler
+        else:
+            notification_scheduler = self.cloud_tasks_notification_scheduler
         return BasicAssignmentService(
             assignment_repository=self.assignment_repository,
-            notification_scheduler=self.cloud_tasks_notification_scheduler,
+            notification_scheduler=notification_scheduler,
             survey_repository=self.survey_repository,
             soon_to_expire_notification_delay=timedelta(
                 minutes=_settings.SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
@@ -153,12 +169,16 @@ class AppConfiguration:
 
     @cached_property
     def test_assignment_service(self) -> AssignmentService:
+        if _settings.LOCAL_RUN:
+            notification_scheduler = self.direct_notification_scheduler
+        else:
+            notification_scheduler = self.cloud_tasks_notification_scheduler
         return TestAssignmentService(
-            notification_scheduler=self.cloud_tasks_notification_scheduler,
+            notification_scheduler=notification_scheduler,
         )
 
     @cached_property
-    def assignment_scheduler(self) -> AssignmentScheduler:
+    def cloud_tasks_assignment_scheduler(self) -> AssignmentScheduler:
         return CloudTasksAssignmentScheduler(
             tasks_api=CloudTasksAPI(
                 client=tasks_v2.CloudTasksClient(),
@@ -176,9 +196,19 @@ class AppConfiguration:
         )
 
     @cached_property
+    def direct_assignment_scheduler(self) -> AssignmentScheduler:
+        return DirectAssignmentScheduler(
+            assignment_service=self.assignment_service,
+        )
+
+    @cached_property
     def scheduler_service(self) -> SchedulerService:
+        if _settings.LOCAL_RUN:
+            assignment_scheduler = self.direct_assignment_scheduler
+        else:
+            assignment_scheduler = self.cloud_tasks_assignment_scheduler
         return BasicSchedulerService(
-            assignment_scheduler=self.assignment_scheduler,
+            assignment_scheduler=assignment_scheduler,
             schedule_repository=self.schedule_repository,
             group_repository=self.group_repository,
         )
@@ -204,10 +234,6 @@ class AppConfiguration:
             test_user_id="test",
             test_survey_id="test",
         )
-
-
-_settings = Settings()
-_configuration = AppConfiguration()
 
 
 def get_configuration() -> AppConfiguration:
@@ -272,3 +298,13 @@ def get_notification_service() -> NotificationService:
 
 def get_application_service() -> Literal["back", "scheduler", "all"]:
     return _settings.APPLICATION_SERVICE
+
+
+def _configure_local_run() -> None:
+    if _settings.LOCAL_RUN:
+        get_firestore_client(use_emulator=True)
+
+
+_settings = Settings()
+_configuration = AppConfiguration()
+_configure_local_run()
