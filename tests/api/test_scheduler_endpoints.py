@@ -11,6 +11,7 @@ from lta.api.configuration import (
     get_scheduler_service,
 )
 from lta.domain.assignment import Assignment
+from lta.domain.assignment_repository import AssignmentRepository
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_service import (
@@ -50,20 +51,17 @@ def android_recording_notification_publisher() -> RecordingNotificationPublisher
 
 
 @pytest.fixture
-def assignment_repository() -> InMemoryAssignmentRepository:
-    return InMemoryAssignmentRepository()
-
-
-@pytest.fixture
 def notification_service(
     prefilled_memory_user_repository: UserRepository,
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
+    empty_memory_assignment_repository: AssignmentRepository,
 ) -> NotificationService:
     return NotificationService(
         ios_notification_publisher=ios_recording_notification_publisher,
         android_notification_publisher=android_recording_notification_publisher,
         user_repository=prefilled_memory_user_repository,
+        assignment_repository=empty_memory_assignment_repository,
     )
 
 
@@ -86,14 +84,14 @@ def test_client(
     prefilled_memory_survey_repository: SurveyRepository,
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
-    assignment_repository: InMemoryAssignmentRepository,
+    empty_memory_assignment_repository: InMemoryAssignmentRepository,
     notification_service: NotificationService,
     notification_scheduler: RecordingDirectNotificationScheduler,
 ) -> TestClient:
 
     assignment_service = BasicAssignmentService(
         notification_scheduler=notification_scheduler,
-        assignment_repository=assignment_repository,
+        assignment_repository=empty_memory_assignment_repository,
         survey_repository=prefilled_memory_survey_repository,
         soon_to_expire_notification_delay=timedelta(minutes=30),
         rand=random.Random(100),
@@ -132,7 +130,7 @@ def test_schedule_assignments(
     test_client: TestClient,
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
-    assignment_repository: InMemoryAssignmentRepository,
+    empty_memory_assignment_repository: InMemoryAssignmentRepository,
     notification_scheduler: RecordingDirectNotificationScheduler,
 ) -> None:
     now = date(2023, 1, 2)
@@ -140,10 +138,11 @@ def test_schedule_assignments(
     assert response.status_code == 200
 
     assert_scheduler_service_for_date_20230102(
-        assignment_repository=assignment_repository,
+        assignment_repository=empty_memory_assignment_repository,
         notification_scheduler=notification_scheduler,
         android_notification_publisher=android_recording_notification_publisher,
         ios_notification_publisher=ios_recording_notification_publisher,
+        assignments_are_submitted=False,
     )
 
 
@@ -158,7 +157,7 @@ def test_schedule_assignment(
     test_client: TestClient,
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
-    assignment_repository: InMemoryAssignmentRepository,
+    empty_memory_assignment_repository: InMemoryAssignmentRepository,
     notification_scheduler: RecordingDirectNotificationScheduler,
 ) -> None:
     now = datetime(2023, 1, 2, 3, 4, 5)
@@ -168,7 +167,7 @@ def test_schedule_assignment(
     )
     assert response.status_code == 200
 
-    assert assignment_repository.assignments == {
+    assert empty_memory_assignment_repository.assignments == {
         "user1": {
             "f3a3c571-7476-4899-b5a3-adb3254a9493": Assignment(
                 id="f3a3c571-7476-4899-b5a3-adb3254a9493",
@@ -198,6 +197,7 @@ def test_schedule_assignment(
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",
+            "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
         },
     ]
 

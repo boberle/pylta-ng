@@ -122,6 +122,7 @@ class AppConfiguration:
             ios_notification_publisher=self.expo_notification_publisher,
             android_notification_publisher=self.expo_notification_publisher,
             user_repository=self.user_repository,
+            assignment_repository=self.assignment_repository,
         )
 
     @cached_property

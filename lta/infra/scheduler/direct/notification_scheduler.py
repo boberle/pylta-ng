@@ -30,9 +30,18 @@ class DirectNotificationScheduler(NotificationScheduler):
         notification_title: str,
         notification_message: str,
         when: datetime,
+        assignment_id: str | None = None,
     ) -> None:
-        self.notification_service.notify_user(
-            user_id=user_id,
-            notification_title=notification_title,
-            notification_message=notification_message,
-        )
+        if assignment_id is not None:
+            self.notification_service.notify_user_if_assignment_not_submitted(
+                user_id=user_id,
+                notification_title=notification_title,
+                notification_message=notification_message,
+                assignment_id=assignment_id,
+            )
+        else:
+            self.notification_service.notify_user(
+                user_id=user_id,
+                notification_title=notification_title,
+                notification_message=notification_message,
+            )

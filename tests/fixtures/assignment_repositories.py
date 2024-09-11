@@ -1,4 +1,5 @@
 import urllib.request
+from datetime import datetime, timezone
 from typing import Any, Generator
 
 import pytest
@@ -8,6 +9,7 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
+from lta.domain.assignment import Assignment
 from lta.domain.assignment_repository import AssignmentRepository
 from lta.infra.repositories.firestore.assignment_repository import (
     FirestoreAssignmentRepository,
@@ -39,7 +41,7 @@ def empty_firestore_assignment_repository() -> (
 
 
 @pytest.fixture
-def empty_memory_assignment_repository() -> AssignmentRepository:
+def empty_memory_assignment_repository() -> InMemoryAssignmentRepository:
     return InMemoryAssignmentRepository()
 
 
@@ -53,3 +55,21 @@ def empty_assignment_repository(
         yield empty_firestore_assignment_repository
     else:
         yield empty_memory_assignment_repository
+
+
+class AlwaysSubmittedAssignmentRepository(InMemoryAssignmentRepository):
+    """
+    Like an InMemoryAssignmentRepository, but when creating an assignment,
+    the `submitted_at` and `answers` are filled up (with the `created_at` time).
+    """
+
+    def get_assignment(self, user_id: str, assignment_id: str) -> Assignment:
+        assignment = super().get_assignment(user_id, assignment_id)
+        assignment.submitted_at = datetime.now(tz=timezone.utc)
+        assignment.answers = [1, 2, "hello"]
+        return assignment
+
+
+@pytest.fixture
+def always_submitted_assignment_repository() -> AlwaysSubmittedAssignmentRepository:
+    return AlwaysSubmittedAssignmentRepository()

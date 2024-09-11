@@ -28,9 +28,10 @@ class BasicAssignmentService:
     def create_assignment(
         self, user_id: str, survey_id: str, ref_time: datetime
     ) -> None:
+        assignment_id = str(make_uuid4(self.rand))
         self.assignment_repository.create_assignment(
             user_id=user_id,
-            id=str(make_uuid4(self.rand)),
+            id=assignment_id,
             survey_id=survey_id,
             created_at=ref_time,
         )
@@ -50,6 +51,7 @@ class BasicAssignmentService:
             notification_title=survey.soon_to_expire_notification.title,
             notification_message=survey.soon_to_expire_notification.message,
             when=second_notification_time,
+            assignment_id=assignment_id,
         )
 
 

@@ -20,4 +20,5 @@ class NotificationScheduler(Protocol):
         notification_title: str,
         notification_message: str,
         when: datetime,
+        assignment_id: str | None = None,
     ) -> None: ...

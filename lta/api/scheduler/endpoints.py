@@ -63,6 +63,7 @@ class NotifyUserRequest(BaseModel):
     user_id: str
     notification_title: str
     notification_message: str
+    assignment_id: str | None = None
 
 
 @router.post("/notify-user/")
@@ -70,16 +71,16 @@ def notify_user(
     request: NotifyUserRequest,
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> None:
-
-    # TODO:
-    # - add in request: `check: {user_id, assignment_id} | None`
-    # - if not None, then `assignment_repository.get_assignment(request.check.user_id, request.check.assignment_id).submitted_at is not None`
-    # - if assignment is submitted, don't send the notification
-
-    # or put this logic in the notification_service (notification_service.notify_user_if_not_submitted(...))
-
-    notification_service.notify_user(
-        user_id=request.user_id,
-        notification_title=request.notification_title,
-        notification_message=request.notification_message,
-    )
+    if request.assignment_id is not None:
+        notification_service.notify_user_if_assignment_not_submitted(
+            user_id=request.user_id,
+            assignment_id=request.assignment_id,
+            notification_title=request.notification_title,
+            notification_message=request.notification_message,
+        )
+    else:
+        notification_service.notify_user(
+            user_id=request.user_id,
+            notification_title=request.notification_title,
+            notification_message=request.notification_message,
+        )

@@ -36,6 +36,7 @@ class RecordingDirectNotificationScheduler(DirectNotificationScheduler):
         notification_title: str,
         notification_message: str,
         when: datetime,
+        assignment_id: str | None = None,
     ) -> None:
         self.recorder.append(
             dict(
@@ -43,8 +44,9 @@ class RecordingDirectNotificationScheduler(DirectNotificationScheduler):
                 user_id=user_id,
                 notification_title=notification_title,
                 notification_message=notification_message,
+                assignment_id=assignment_id,
             )
         )
         super().schedule_notification_for_later(
-            user_id, notification_title, notification_message, when
+            user_id, notification_title, notification_message, when, assignment_id
         )

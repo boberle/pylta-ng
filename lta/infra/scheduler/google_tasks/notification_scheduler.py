@@ -35,12 +35,14 @@ class CloudTasksNotificationScheduler(NotificationScheduler):
         notification_title: str,
         notification_message: str,
         when: datetime,
+        assignment_id: str | None = None,
     ) -> None:
         self.tasks_api.create_task(
             payload=dict(
                 user_id=user_id,
                 notification_title=notification_title,
                 notification_message=notification_message,
+                assignment_id=assignment_id,
             ),
             when=when,
             task_id=CloudTasksAPI.generate_task_id(user_id, when),

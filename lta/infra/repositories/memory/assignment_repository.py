@@ -14,10 +14,15 @@ class InMemoryAssignmentRepository(AssignmentRepository):
     )
     expiration_delay: timedelta = timedelta(hours=1)
 
-    def get_assignment(self, user_id: str, id: str) -> Assignment:
+    def _get_assignment(self, user_id: str, id: str) -> Assignment:
+        """Return a reference to the object."""
         if user_id not in self.assignments or id not in self.assignments[user_id]:
             raise AssignmentNotFound(user_id=user_id, assignment_id=id)
         return self.assignments[user_id][id]
+
+    def get_assignment(self, user_id: str, id: str) -> Assignment:
+        """Return a copy of the object."""
+        return self._get_assignment(user_id, id).model_copy()
 
     def create_assignment(
         self,
@@ -38,7 +43,7 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         self, user_id: str, limit: int | None = None
     ) -> List[Assignment]:
         assignments = [
-            assignment
+            assignment.model_copy()
             for assignment in self.assignments[user_id].values()
             if assignment.user_id == user_id
         ]
@@ -53,22 +58,22 @@ class InMemoryAssignmentRepository(AssignmentRepository):
     def schedule_assignment(
         self, user_id: str, assignment_id: str, when: datetime
     ) -> None:
-        assignment = self.get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, assignment_id)
         assignment.scheduled_for = when
 
     def publish_assignment(
         self, user_id: str, assignment_id: str, when: datetime
     ) -> None:
-        assignment = self.get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, assignment_id)
         assignment.published_at = when
         assignment.expired_at = when + self.expiration_delay
 
     def notify_user(self, user_id: str, assignment_id: str, when: datetime) -> None:
-        assignment = self.get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, assignment_id)
         assignment.notified_at.append(when)
 
     def open_assignment(self, user_id: str, assignment_id: str, when: datetime) -> None:
-        assignment = self.get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, assignment_id)
         assignment.opened_at.append(when)
 
     def submit_assignment(
@@ -78,7 +83,7 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         when: datetime,
         answers: List[AnswerType],
     ) -> None:
-        assignment = self.get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, assignment_id)
         assignment.submitted_at = when
         assignment.answers = answers
 
@@ -86,7 +91,7 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         self, user_id: str, ref_time: datetime
     ) -> List[Assignment]:
         assignments = [
-            assignment
+            assignment.model_copy()
             for assignment in self.assignments[user_id].values()
             if assignment.user_id == user_id
             and assignment.expired_at is not None

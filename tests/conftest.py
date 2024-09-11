@@ -1,4 +1,5 @@
 from tests.fixtures.assignment_repositories import (  # noqa: F401
+    always_submitted_assignment_repository,
     empty_assignment_repository,
     empty_firestore_assignment_repository,
     empty_memory_assignment_repository,

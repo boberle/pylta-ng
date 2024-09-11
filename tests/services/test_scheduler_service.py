@@ -24,6 +24,7 @@ from lta.infra.scheduler.recording.notification_publisher import (
 from lta.infra.scheduler.recording.notification_scheduler import (
     RecordingDirectNotificationScheduler,
 )
+from tests.fixtures.assignment_repositories import AlwaysSubmittedAssignmentRepository
 from tests.services.asserts_scheduler_service import (
     assert_scheduler_service_for_date_20230102,
 )
@@ -45,25 +46,36 @@ def test_convert_time_to_int_in_vice_versa(t: time, i: int) -> None:
     assert convert_int_to_time(i) == t
 
 
+@pytest.mark.parametrize("assignment_is_submitted", [True, False])
 def test_schedule_assignments_for_date__using_direct_scheduler(
     prefilled_memory_user_repository: UserRepository,
     prefilled_memory_schedule_repository: ScheduleRepository,
     prefilled_memory_group_repository: GroupRepository,
     prefilled_memory_survey_repository: SurveyRepository,
+    empty_memory_assignment_repository: InMemoryAssignmentRepository,
+    always_submitted_assignment_repository: AlwaysSubmittedAssignmentRepository,
+    assignment_is_submitted: bool,
 ) -> None:
     ios_notification_publisher = RecordingNotificationPublisher()
     android_notification_publisher = RecordingNotificationPublisher()
+
+    assignment_repository = (
+        always_submitted_assignment_repository
+        if assignment_is_submitted
+        else empty_memory_assignment_repository
+    )
+
     notification_service = NotificationService(
         ios_notification_publisher=ios_notification_publisher,
         android_notification_publisher=android_notification_publisher,
         user_repository=prefilled_memory_user_repository,
+        assignment_repository=assignment_repository,
     )
 
     notification_scheduler = RecordingDirectNotificationScheduler(
         user_repository=prefilled_memory_user_repository,
         notification_service=notification_service,
     )
-    assignment_repository = InMemoryAssignmentRepository()
     assignment_service = BasicAssignmentService(
         notification_scheduler=notification_scheduler,
         assignment_repository=assignment_repository,
@@ -91,4 +103,5 @@ def test_schedule_assignments_for_date__using_direct_scheduler(
         notification_scheduler=notification_scheduler,
         android_notification_publisher=android_notification_publisher,
         ios_notification_publisher=ios_notification_publisher,
+        assignments_are_submitted=assignment_is_submitted,
     )
