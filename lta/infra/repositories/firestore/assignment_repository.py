@@ -21,9 +21,7 @@ class StoredAssignment(BaseModel):
     user_id: str
     survey_id: str
     created_at: datetime
-    scheduled_for: datetime | None
-    published_at: datetime | None
-    expired_at: datetime | None
+    expired_at: datetime
     notified_at: list[datetime]
     opened_at: list[datetime]
     submitted_at: datetime | None
@@ -36,8 +34,6 @@ class StoredAssignment(BaseModel):
             user_id=assigment.user_id,
             survey_id=assigment.survey_id,
             created_at=assigment.created_at,
-            scheduled_for=assigment.scheduled_for,
-            published_at=assigment.published_at,
             expired_at=assigment.expired_at,
             notified_at=assigment.notified_at,
             opened_at=assigment.opened_at,
@@ -55,8 +51,6 @@ class StoredAssignment(BaseModel):
             user_id=self.user_id,
             survey_id=self.survey_id,
             created_at=self.created_at,
-            scheduled_for=self.scheduled_for,
-            published_at=self.published_at,
             expired_at=self.expired_at,
             notified_at=self.notified_at,
             opened_at=self.opened_at,
@@ -94,6 +88,7 @@ class FirestoreAssignmentRepository(AssignmentRepository):
             survey_id=survey_id,
             user_id=user_id,
             created_at=created_at,
+            expired_at=created_at + self.expiration_delay,
         )
         stored_assignment = StoredAssignment.from_domain(assigment)
         self._get_collection_ref(user_id).document(id).set(
@@ -122,17 +117,6 @@ class FirestoreAssignmentRepository(AssignmentRepository):
 
     def count_assignments(self, user_id: str) -> int:
         return get_collection_count(self._get_collection_ref(user_id))
-
-    def schedule_assignment(self, user_id: str, id: str, when: datetime) -> None:
-        doc_ref = self._get_collection_ref(user_id).document(id)
-        self._update(doc_ref, user_id, id, {"scheduled_for": when})
-
-    def publish_assignment(self, user_id: str, id: str, when: datetime) -> None:
-        doc_ref = self._get_collection_ref(user_id).document(id)
-        expired_at = when + self.expiration_delay
-        self._update(
-            doc_ref, user_id, id, {"published_at": when, "expired_at": expired_at}
-        )
 
     def notify_user(self, user_id: str, id: str, when: datetime) -> None:
         doc_ref = self._get_collection_ref(user_id).document(id)

@@ -36,6 +36,7 @@ class InMemoryAssignmentRepository(AssignmentRepository):
             user_id=user_id,
             survey_id=survey_id,
             created_at=created_at,
+            expired_at=created_at + self.expiration_delay,
         )
         self.assignments[user_id][id] = assignment
 
@@ -54,19 +55,6 @@ class InMemoryAssignmentRepository(AssignmentRepository):
 
     def count_assignments(self, user_id: str) -> int:
         return len(self.assignments[user_id])
-
-    def schedule_assignment(
-        self, user_id: str, assignment_id: str, when: datetime
-    ) -> None:
-        assignment = self._get_assignment(user_id, assignment_id)
-        assignment.scheduled_for = when
-
-    def publish_assignment(
-        self, user_id: str, assignment_id: str, when: datetime
-    ) -> None:
-        assignment = self._get_assignment(user_id, assignment_id)
-        assignment.published_at = when
-        assignment.expired_at = when + self.expiration_delay
 
     def notify_user(self, user_id: str, assignment_id: str, when: datetime) -> None:
         assignment = self._get_assignment(user_id, assignment_id)

@@ -70,12 +70,6 @@ def test_notify_user__check_assignment_is_not_submitted(
                         user_id="user1",
                         survey_id="survey1",
                         created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),
-                        scheduled_for=datetime(
-                            2023, 10, 2, 12, 0, 0, tzinfo=timezone.utc
-                        ),
-                        published_at=datetime(
-                            2023, 10, 1, 13, 0, 0, tzinfo=timezone.utc
-                        ),
                         expired_at=datetime(
                             2023, 10, 10, 12, 0, 0, tzinfo=timezone.utc
                         ),
@@ -93,12 +87,6 @@ def test_notify_user__check_assignment_is_not_submitted(
                         user_id="user1",
                         survey_id="survey1",
                         created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),
-                        scheduled_for=datetime(
-                            2023, 10, 2, 12, 0, 0, tzinfo=timezone.utc
-                        ),
-                        published_at=datetime(
-                            2023, 10, 1, 13, 0, 0, tzinfo=timezone.utc
-                        ),
                         expired_at=datetime(
                             2023, 10, 10, 12, 0, 0, tzinfo=timezone.utc
                         ),

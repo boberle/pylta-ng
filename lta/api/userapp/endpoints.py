@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import cast
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -66,7 +65,7 @@ async def get_assignments(
         pending_assignment=(
             PendingAssignment(
                 id=pending_assignment.id,
-                expired_at=cast(datetime, pending_assignment.expired_at),
+                expired_at=pending_assignment.expired_at,
             )
             if pending_assignment
             else None

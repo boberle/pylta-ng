@@ -10,9 +10,7 @@ class Assignment(BaseModel):
     user_id: str
     survey_id: str
     created_at: datetime
-    scheduled_for: datetime | None = None
-    published_at: datetime | None = None
-    expired_at: datetime | None = None
+    expired_at: datetime
     notified_at: list[datetime] = Field(default_factory=list)
     opened_at: list[datetime] = Field(default_factory=list)
     submitted_at: datetime | None = None
