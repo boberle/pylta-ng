@@ -18,7 +18,15 @@ class InMemorySurveyRepository(SurveyRepository):
         return self.surveys[id]
 
     def create_survey(self, id: str, survey: SurveyCreation) -> None:
-        stored_survey = Survey(id=id, **survey.model_dump())
+        stored_survey = Survey(
+            id=id,
+            title=survey.title,
+            welcome_message=survey.welcome_message,
+            submit_message=survey.submit_message,
+            publish_notification=survey.publish_notification,
+            soon_to_expire_notification=survey.soon_to_expire_notification,
+            questions=survey.questions,
+        )
         self.surveys[stored_survey.id] = stored_survey
 
     def list_surveys(self) -> list[Survey]:

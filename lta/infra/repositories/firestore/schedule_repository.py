@@ -87,7 +87,15 @@ class FirestoreScheduleRepository(ScheduleRepository):
         doc_ref = self.client.collection(self.collection_name).document(id)
         doc_ref.set(
             StoredSchedule.from_domain(
-                Schedule(id=id, **schedule.model_dump())
+                Schedule(
+                    id=id,
+                    survey_id=schedule.survey_id,
+                    start_date=schedule.start_date,
+                    end_date=schedule.end_date,
+                    time_ranges=schedule.time_ranges,
+                    user_ids=schedule.user_ids,
+                    group_ids=schedule.group_ids,
+                )
             ).model_dump()
         )
 

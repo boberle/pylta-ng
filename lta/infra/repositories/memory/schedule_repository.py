@@ -22,7 +22,12 @@ class InMemoryScheduleRepository(ScheduleRepository):
     def create_schedule(self, id: str, schedule: ScheduleCreation) -> None:
         self.schedules[id] = Schedule(
             id=id,
-            **schedule.model_dump(),
+            survey_id=schedule.survey_id,
+            start_date=schedule.start_date,
+            end_date=schedule.end_date,
+            time_ranges=schedule.time_ranges,
+            user_ids=schedule.user_ids,
+            group_ids=schedule.group_ids,
         )
 
     def delete_schedule(self, id: str) -> None:
