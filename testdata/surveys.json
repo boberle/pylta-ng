@@ -1,0 +1,104 @@
+[
+  {
+    "id": "survey1",
+    "title": "Sample first survey!",
+    "welcome_message": "Welcome to our survey!",
+    "submit_message": "Thank you for your participation!",
+    "publish_notification": {
+      "title": "Hey",
+      "message": "Survey published!"
+    },
+    "soon_to_expire_notification": {
+      "title": "Hey",
+      "message": "Survey soon to expire!"
+    },
+    "questions": [
+      {
+        "message": "What is your favorite color?",
+        "type": "single-choice",
+        "choices": [
+          "Red",
+          "Blue",
+          "Green",
+          "Yellow"
+        ]
+      },
+      {
+        "message": "What is your favorite music genre?",
+        "type": "single-choice",
+        "choices": [
+          "Rock",
+          "Pop",
+          "Hip-hop",
+          "Jazz"
+        ]
+      },
+      {
+        "message": "What are your favorite fruits?",
+        "type": "multiple-choice",
+        "choices": [
+          "Apple",
+          "Banana",
+          "Orange",
+          "Pineapple"
+        ]
+      },
+      {
+        "message": "Tell us about your travel experiences.",
+        "type": "open-ended",
+        "max_length": 200
+      }
+    ]
+  },
+  {
+    "id": "survey2",
+    "title": "Sample second survey!",
+    "welcome_message": "Welcome to our second survey!",
+    "submit_message": "Thank you for your participation!",
+    "publish_notification": {
+      "title": "Hi",
+      "message": "A second survey is published!"
+    },
+    "soon_to_expire_notification": {
+      "title": "Hi",
+      "message": "The second survey is soon to expire!"
+    },
+    "questions": [
+      {
+        "message": "What is your favorite animal?",
+        "type": "single-choice",
+        "choices": [
+          "Dog",
+          "Cat",
+          "Bird",
+          "Fish"
+        ]
+      },
+      {
+        "message": "What are your favorite books?",
+        "type": "multiple-choice",
+        "choices": [
+          "To Kill a Mockingbird",
+          "1984",
+          "Pride and Prejudice",
+          "The Great Gatsby"
+        ]
+      },
+      {
+        "message": "What are your favorite movies?",
+        "type": "multiple-choice",
+        "choices": [
+          "The Shawshank Redemption",
+          "The Godfather",
+          "Pulp Fiction",
+          "The Dark Knight"
+        ]
+      },
+      {
+        "message": "Tell us about your favorite movies.",
+        "type": "open-ended",
+        "max_length": 200
+      }
+    ]
+  }
+]
