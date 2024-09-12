@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from datetime import timedelta
+from enum import Enum
 from functools import cache, cached_property
 from typing import Literal
 from urllib.parse import urljoin
@@ -70,52 +71,48 @@ class Settings(BaseSettings):
         "https://dummy-project-123.europe-west1.run.app/"
     )
     APPLICATION_SERVICE: Literal["back", "scheduler", "all"] = "back"
-    LOCAL_RUN: bool = False
+    USE_FIRESTORE_EMULATOR: bool = False
+    USE_DIRECT_SCHEDULERS: bool = False
 
-    model_config = SettingsConfigDict(env_file="settings/env.dev")
+    model_config = SettingsConfigDict(env_file="settings/env.local-dev")
 
 
 @dataclass
 class AppConfiguration:
 
     @cached_property
-    def firestore_client(self) -> google.cloud.firestore.Client:
-        get_firebase_app()
-        return firebase_admin.firestore.client()
-
-    @cached_property
     def user_repository(self) -> UserRepository:
         return FirestoreUserRepository(
-            client=self.firestore_client,
+            client=get_firestore_client(),
         )
 
     @cached_property
     def assignment_repository(self) -> AssignmentRepository:
         return FirestoreAssignmentRepository(
-            client=self.firestore_client,
+            client=get_firestore_client(),
         )
 
     @cached_property
     def schedule_repository(self) -> ScheduleRepository:
         return FirestoreScheduleRepository(
-            client=self.firestore_client,
+            client=get_firestore_client(),
         )
 
     @cached_property
     def survey_repository(self) -> SurveyRepository:
         return FirestoreSurveyRepository(
-            client=self.firestore_client,
+            client=get_firestore_client(),
         )
 
     @cached_property
     def group_repository(self) -> GroupRepository:
         return FirestoreGroupRepository(
-            client=self.firestore_client,
+            client=get_firestore_client(),
         )
 
     @cached_property
     def assignment_limit_on_app_home_page(self) -> int:
-        return _settings.ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
+        return get_settings().ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
 
     @cached_property
     def expo_notification_publisher(self) -> NotificationPublisher:
@@ -136,12 +133,14 @@ class AppConfiguration:
             tasks_api=CloudTasksAPI(
                 client=tasks_v2.CloudTasksClient(),
                 url=HttpUrl(
-                    urljoin(str(_settings.SCHEDULER_SERVICE_BASE_URL), "notify-user/")
+                    urljoin(
+                        str(get_settings().SCHEDULER_SERVICE_BASE_URL), "notify-user/"
+                    )
                 ),
-                project_id=_settings.PROJECT_NAME,
-                location=_settings.PROJECT_LOCATION,
-                queue_name=_settings.NOTIFICATION_TASKS_QUEUE_NAME,
-                service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
+                project_id=get_settings().PROJECT_NAME,
+                location=get_settings().PROJECT_LOCATION,
+                queue_name=get_settings().NOTIFICATION_TASKS_QUEUE_NAME,
+                service_account_email=get_settings().CLOUD_TASKS_SERVICE_ACCOUNT_ID,
             ),
         )
 
@@ -154,7 +153,7 @@ class AppConfiguration:
 
     @cached_property
     def assignment_service(self) -> AssignmentService:
-        if _settings.LOCAL_RUN:
+        if get_settings().USE_DIRECT_SCHEDULERS:
             notification_scheduler = self.direct_notification_scheduler
         else:
             notification_scheduler = self.cloud_tasks_notification_scheduler
@@ -163,13 +162,13 @@ class AppConfiguration:
             notification_scheduler=notification_scheduler,
             survey_repository=self.survey_repository,
             soon_to_expire_notification_delay=timedelta(
-                minutes=_settings.SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
+                minutes=get_settings().SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
             ),
         )
 
     @cached_property
     def test_assignment_service(self) -> AssignmentService:
-        if _settings.LOCAL_RUN:
+        if get_settings().USE_DIRECT_SCHEDULERS:
             notification_scheduler = self.direct_notification_scheduler
         else:
             notification_scheduler = self.cloud_tasks_notification_scheduler
@@ -184,14 +183,14 @@ class AppConfiguration:
                 client=tasks_v2.CloudTasksClient(),
                 url=HttpUrl(
                     urljoin(
-                        str(_settings.SCHEDULER_SERVICE_BASE_URL),
+                        str(get_settings().SCHEDULER_SERVICE_BASE_URL),
                         "schedule-assignment/",
                     )
                 ),
-                project_id=_settings.PROJECT_NAME,
-                location=_settings.PROJECT_LOCATION,
-                queue_name=_settings.SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
-                service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
+                project_id=get_settings().PROJECT_NAME,
+                location=get_settings().PROJECT_LOCATION,
+                queue_name=get_settings().SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
+                service_account_email=get_settings().CLOUD_TASKS_SERVICE_ACCOUNT_ID,
             ),
         )
 
@@ -203,7 +202,7 @@ class AppConfiguration:
 
     @cached_property
     def scheduler_service(self) -> SchedulerService:
-        if _settings.LOCAL_RUN:
+        if get_settings().USE_DIRECT_SCHEDULERS:
             assignment_scheduler = self.direct_assignment_scheduler
         else:
             assignment_scheduler = self.cloud_tasks_assignment_scheduler
@@ -221,14 +220,14 @@ class AppConfiguration:
                     client=tasks_v2.CloudTasksClient(),
                     url=HttpUrl(
                         urljoin(
-                            str(_settings.SCHEDULER_SERVICE_BASE_URL),
+                            str(get_settings().SCHEDULER_SERVICE_BASE_URL),
                             "schedule-assignment/?test=true",
                         )
                     ),
-                    project_id=_settings.PROJECT_NAME,
-                    location=_settings.PROJECT_LOCATION,
-                    queue_name=_settings.SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
-                    service_account_email=_settings.CLOUD_TASKS_SERVICE_ACCOUNT_ID,
+                    project_id=get_settings().PROJECT_NAME,
+                    location=get_settings().PROJECT_LOCATION,
+                    queue_name=get_settings().SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
+                    service_account_email=get_settings().CLOUD_TASKS_SERVICE_ACCOUNT_ID,
                 ),
             ),
             test_user_id="test",
@@ -236,16 +235,52 @@ class AppConfiguration:
         )
 
 
+__settings: Settings | None = None
+__configuration: AppConfiguration | None = None
+
+
 def get_configuration() -> AppConfiguration:
-    return _configuration
+    global __configuration
+    if __configuration is None:
+        __configuration = AppConfiguration()
+    return __configuration
+
+
+class Environment(str, Enum):
+    LOCAL_PROD = "local-prod"
+    LOCAL_DEV = "local-dev"
+
+
+def get_settings(local_env: Environment | None = None) -> Settings:
+    global __settings
+    if __settings is None:
+
+        if local_env is not None:
+            if local_env == Environment.LOCAL_PROD:
+                file = "settings/env.local-prod"
+            elif local_env == Environment.LOCAL_DEV:
+                file = "settings/env.local-dev"
+            else:
+                raise ValueError(f"Invalid local_env: {local_env}")
+            __settings = Settings(_env_file=file)  # type:ignore
+        else:
+            __settings = Settings()
+
+    return __settings
+
+
+def set_environment(local_env: Environment) -> None:
+    get_settings(local_env)
 
 
 @cache
 def get_firestore_client(use_emulator: bool = False) -> google.cloud.firestore.Client:
-    if use_emulator and not os.environ.get("FIRESTORE_EMULATOR_HOST"):
+    if (use_emulator or get_settings().USE_FIRESTORE_EMULATOR) and not os.environ.get(
+        "FIRESTORE_EMULATOR_HOST"
+    ):
         os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
     get_firebase_app()
-    return _configuration.firestore_client
+    return firebase_admin.firestore.client()
 
 
 @cache
@@ -259,56 +294,46 @@ def get_firebase_app() -> firebase_admin.App:
     """
     return firebase_admin.initialize_app(
         options=dict(
-            projectId=_settings.PROJECT_NAME,
+            projectId=get_settings().PROJECT_NAME,
         )
     )
 
 
 def get_project_name() -> str:
-    return _settings.PROJECT_NAME
+    return get_settings().PROJECT_NAME
 
 
 def get_allowed_origins() -> list[str]:
-    return _settings.ALLOWED_ORIGINS
+    return get_settings().ALLOWED_ORIGINS
 
 
 def get_admin_email_addresses() -> list[str]:
-    return _settings.ADMIN_EMAIL_ADDRESSES
+    return get_settings().ADMIN_EMAIL_ADDRESSES
 
 
 def get_scheduler_service() -> SchedulerService:
-    return _configuration.scheduler_service
+    return get_configuration().scheduler_service
 
 
 def get_test_scheduler_service() -> SchedulerService:
-    return _configuration.test_scheduler_service
+    return get_configuration().test_scheduler_service
 
 
 def get_assignment_service() -> AssignmentService:
-    return _configuration.assignment_service
+    return get_configuration().assignment_service
 
 
 def get_test_assignment_service() -> AssignmentService:
-    return _configuration.test_assignment_service
+    return get_configuration().test_assignment_service
 
 
 def get_notification_service() -> NotificationService:
-    return _configuration.notification_service
+    return get_configuration().notification_service
 
 
 def get_application_service() -> Literal["back", "scheduler", "all"]:
-    return _settings.APPLICATION_SERVICE
+    return get_settings().APPLICATION_SERVICE
 
 
 def get_survey_repository() -> SurveyRepository:
-    return _configuration.survey_repository
-
-
-def _configure_local_run() -> None:
-    if _settings.LOCAL_RUN:
-        get_firestore_client(use_emulator=True)
-
-
-_settings = Settings()
-_configuration = AppConfiguration()
-_configure_local_run()
+    return get_configuration().survey_repository
