@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import EmailStr
 
-from lta.domain.user import Device, User
+from lta.domain.user import Device, DeviceOS, User
 from lta.domain.user_repository import UserNotFound, UserRepository
 
 
@@ -24,13 +24,25 @@ class InMemoryUserRepository(UserRepository):
             raise UserNotFound(user_id=id)
         return self.users[id]
 
-    def set_device_registration(self, id: str, device: Device) -> None:
+    def add_device_registration(
+        self, id: str, token: str, os: DeviceOS, version: str | None, date: datetime
+    ) -> None:
         if id not in self.users:
             raise UserNotFound(user_id=id)
-        for device_ in self.users[id].devices:
-            if device_.token == device.token:
+
+        for device in self.users[id].devices:
+            if device.token == token:
+                device.add_connection_time(date)
                 return
-        self.users[id].devices.append(device)
+
+        self.users[id].devices.append(
+            Device(
+                token=token,
+                os=os,
+                version=version,
+                first_connection=date,
+            )
+        )
 
     def create_user(
         self, id: str, email_address: EmailStr, created_at: datetime

@@ -5,7 +5,7 @@ from typing import Protocol
 
 from pydantic import EmailStr
 
-from lta.domain.user import Device, User
+from lta.domain.user import Device, DeviceOS, User
 
 
 @dataclass
@@ -24,7 +24,9 @@ class UserRepository(Protocol):
     def get_user(self, id: str) -> User: ...
 
     @abstractmethod
-    def set_device_registration(self, id: str, device: Device) -> None: ...
+    def add_device_registration(
+        self, id: str, token: str, os: DeviceOS, version: str | None, date: datetime
+    ) -> None: ...
 
     @abstractmethod
     def create_user(

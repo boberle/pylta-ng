@@ -1,5 +1,5 @@
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Generator
 
 import pytest
@@ -27,18 +27,18 @@ def prefilled_memory_user_repository() -> UserRepository:
                         token="user1_device1",
                         os=DeviceOS.ANDROID,
                         version="1",
-                        first_connection=datetime(2024, 1, 1),
-                        last_connection=datetime(2024, 1, 2),
+                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                        last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
                     ),
                     Device(
                         token="user1_device2",
                         os=DeviceOS.IOS,
                         version="1",
-                        first_connection=datetime(2024, 1, 1),
-                        last_connection=datetime(2024, 1, 3),
+                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                        last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
                     ),
                 ],
-                created_at=datetime(2022, 1, 1),
+                created_at=datetime(2022, 1, 1, tzinfo=timezone.utc),
             ),
             "user2": User(
                 id="user2",
@@ -48,17 +48,17 @@ def prefilled_memory_user_repository() -> UserRepository:
                         token="user2_device1",
                         os=DeviceOS.ANDROID,
                         version="1",
-                        first_connection=datetime(2024, 1, 1),
-                        last_connection=datetime(2024, 1, 2),
+                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                        last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
                     ),
                 ],
-                created_at=datetime(2022, 2, 2),
+                created_at=datetime(2022, 2, 2, tzinfo=timezone.utc),
             ),
             "user3": User(
                 id="user3",
                 email_address="user3@idontexist.net",
                 devices=[],
-                created_at=datetime(2022, 3, 3),
+                created_at=datetime(2022, 3, 3, tzinfo=timezone.utc),
             ),
         }
     )

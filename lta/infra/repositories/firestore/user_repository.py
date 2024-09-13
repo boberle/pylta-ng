@@ -6,7 +6,7 @@ import pydantic
 from google.cloud import firestore
 from pydantic import EmailStr
 
-from lta.domain.user import Device, User
+from lta.domain.user import Device, DeviceOS, User
 from lta.domain.user_repository import UserNotFound, UserRepository
 
 
@@ -42,10 +42,28 @@ class FirestoreUserRepository(UserRepository):
         stored_user = pydantic.TypeAdapter(StoredUser).validate_python(doc.to_dict())
         return pydantic.TypeAdapter(User).validate_python(stored_user.model_dump())
 
-    def set_device_registration(self, id: str, device: Device) -> None:
+    def add_device_registration(
+        self, id: str, token: str, os: DeviceOS, version: str | None, date: datetime
+    ) -> None:
         user = self.get_user(id)
-        user.devices.append(device)
-        self.client.collection(self.collection_name).document(id).set(user.model_dump())
+
+        for device in user.devices:
+            if device.token == token:
+                device.add_connection_time(date)
+                break
+        else:
+            user.devices.append(
+                Device(
+                    token=token,
+                    os=os,
+                    version=version,
+                    first_connection=date,
+                )
+            )
+
+        self.client.collection(self.collection_name).document(id).update(
+            {"devices": [d.model_dump() for d in user.devices]}
+        )
 
     def create_user(
         self, id: str, email_address: EmailStr, created_at: datetime
