@@ -133,8 +133,8 @@ async def put_assignment_answers(
 
 class DeviceRegistrationRequest(BaseModel):
     token: str
-    connection_time: datetime
     os: DeviceOS
+    connection_time: datetime | None = None
     version: str | None = None
 
 
@@ -144,10 +144,19 @@ def register_device(
     user_repository: UserRepository = Depends(get_user_repository),
     user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> None:
+    connection_time = request.connection_time or datetime.now(tz=timezone.utc)
+
+    if not user_repository.exists(user.id):
+        user_repository.create_user(
+            id=user.id,
+            email_address=user.email_address,
+            created_at=connection_time,
+        )
+
     user_repository.add_device_registration(
         id=user.id,
         token=request.token,
         os=request.os,
         version=request.version,
-        date=request.connection_time,
+        date=connection_time,
     )
