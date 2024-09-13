@@ -42,7 +42,7 @@ async def get_users(
 
 class Device(BaseModel):
     token: str
-    last_connection: datetime
+    last_connection: datetime | None
 
 
 class UserResponse(BaseModel):

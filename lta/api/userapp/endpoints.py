@@ -3,14 +3,20 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from lta.api.configuration import AppConfiguration, get_configuration
-from lta.authentication import get_authenticated_user
+from lta.api.configuration import (
+    AppConfiguration,
+    get_configuration,
+    get_user_repository,
+)
+from lta.authentication import AuthenticatedUser, get_authenticated_user
 from lta.domain.assignment import AnswerType
 from lta.domain.survey import (
     MultipleChoiceQuestion,
     OpenEndedQuestion,
     SingleChoiceQuestion,
 )
+from lta.domain.user import DeviceOS
+from lta.domain.user_repository import UserRepository
 
 router = APIRouter()
 
@@ -122,4 +128,26 @@ async def put_assignment_answers(
         id=assignment_id,
         when=when,
         answers=request.answers,
+    )
+
+
+class DeviceRegistrationRequest(BaseModel):
+    token: str
+    connection_time: datetime
+    os: DeviceOS
+    version: str | None = None
+
+
+@router.post("/devices/register/")
+def register_device(
+    request: DeviceRegistrationRequest,
+    user_repository: UserRepository = Depends(get_user_repository),
+    user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> None:
+    user_repository.add_device_registration(
+        id=user.id,
+        token=request.token,
+        os=request.os,
+        version=request.version,
+        date=request.connection_time,
     )

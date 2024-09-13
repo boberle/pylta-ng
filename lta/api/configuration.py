@@ -337,3 +337,7 @@ def get_application_service() -> Literal["back", "scheduler", "all"]:
 
 def get_survey_repository() -> SurveyRepository:
     return get_configuration().survey_repository
+
+
+def get_user_repository() -> UserRepository:
+    return get_configuration().user_repository

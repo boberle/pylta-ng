@@ -36,17 +36,17 @@ def test_list_users(test_client: TestClient) -> None:
             {
                 "email_address": "user1@idontexist.net",
                 "id": "user1",
-                "created_at": "2022-01-01T00:00:00",
+                "created_at": "2022-01-01T00:00:00Z",
             },
             {
                 "email_address": "user2@idontexist.net",
                 "id": "user2",
-                "created_at": "2022-02-02T00:00:00",
+                "created_at": "2022-02-02T00:00:00Z",
             },
             {
                 "email_address": "user3@idontexist.net",
                 "id": "user3",
-                "created_at": "2022-03-03T00:00:00",
+                "created_at": "2022-03-03T00:00:00Z",
             },
         ]
     }
@@ -58,14 +58,14 @@ def test_get_user(test_client: TestClient) -> None:
     assert response.json() == {
         "email_address": "user1@idontexist.net",
         "id": "user1",
-        "created_at": "2022-01-01T00:00:00",
+        "created_at": "2022-01-01T00:00:00Z",
         "devices": [
             {
-                "last_connection": "2024-01-02T00:00:00",
+                "last_connection": "2024-01-02T00:00:00Z",
                 "token": "user1_device1",
             },
             {
-                "last_connection": "2024-01-03T00:00:00",
+                "last_connection": "2024-01-03T00:00:00Z",
                 "token": "user1_device2",
             },
         ],
