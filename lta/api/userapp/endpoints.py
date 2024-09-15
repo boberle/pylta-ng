@@ -46,19 +46,19 @@ class AssignmentListResponse(BaseModel):
 
 @router.get("/assignments/")
 async def get_assignments(
-    when: datetime = Query(default=lambda: datetime.now(timezone.utc)),
+    when: datetime = Query(default_factory=lambda: datetime.now(timezone.utc)),
     configuration: AppConfiguration = Depends(get_configuration),
-    user_id: str = Depends(get_authenticated_user),
+    user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> AssignmentListResponse:
     assignments = configuration.assignment_repository.list_assignments(
-        user_id, limit=configuration.assignment_limit_on_app_home_page
+        user.id, limit=configuration.assignment_limit_on_app_home_page
     )
-    total_assignments = configuration.assignment_repository.count_assignments(user_id)
+    total_assignments = configuration.assignment_repository.count_assignments(user.id)
     non_answered_assignments = (
-        configuration.assignment_repository.count_non_answered_assignments(user_id)
+        configuration.assignment_repository.count_non_answered_assignments(user.id)
     )
     pending_assignment = (
-        configuration.assignment_repository.get_next_pending_assignment(user_id, when)
+        configuration.assignment_repository.get_next_pending_assignment(user.id, when)
     )
     return AssignmentListResponse(
         assignments=[
@@ -94,15 +94,15 @@ class AssignmentResponse(BaseModel):
 async def get_assignment(
     assignment_id: str,
     configuration: AppConfiguration = Depends(get_configuration),
-    user_id: str = Depends(get_authenticated_user),
+    user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> AssignmentResponse:
     assignment = configuration.assignment_repository.get_assignment(
-        user_id, assignment_id
+        user.id, assignment_id
     )
     survey = configuration.survey_repository.get_survey(assignment.survey_id)
 
     configuration.assignment_repository.open_assignment(
-        user_id=user_id,
+        user_id=user.id,
         id=assignment_id,
         when=datetime.now(tz=timezone.utc),
     )
@@ -123,12 +123,12 @@ class SubmitAssignmentAnswersRequest(BaseModel):
 async def put_assignment_answers(
     request: SubmitAssignmentAnswersRequest,
     assignment_id: str,
-    when: datetime = Query(default=lambda: datetime.now(timezone.utc)),
+    when: datetime = Query(default_factory=lambda: datetime.now(timezone.utc)),
     configuration: AppConfiguration = Depends(get_configuration),
-    user_id: str = Depends(get_authenticated_user),
+    user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> None:
     configuration.assignment_repository.submit_assignment(
-        user_id=user_id,
+        user_id=user.id,
         id=assignment_id,
         when=when,
         answers=request.answers,
