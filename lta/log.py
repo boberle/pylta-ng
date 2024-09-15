@@ -1,5 +1,5 @@
 import google.cloud.logging
 
 
-def setup_logging() -> None:
+def setup_google_cloud_logging() -> None:
     google.cloud.logging.Client().setup_logging()  # type:ignore

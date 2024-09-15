@@ -80,6 +80,8 @@ class Settings(BaseSettings):
     TEST_NOTIFICATION_TITLE: str = "Test Notification from Language Track App"
     TEST_NOTIFICATION_MESSAGE: str = "This is a test notification."
 
+    USE_GOOGLE_CLOUD_LOGGING: bool = False
+
     model_config = SettingsConfigDict(env_file="settings/env.local-dev")
 
 
@@ -354,3 +356,7 @@ def get_test_notification() -> Notification:
         title=get_settings().TEST_NOTIFICATION_TITLE,
         message=get_settings().TEST_NOTIFICATION_MESSAGE,
     )
+
+
+def get_use_google_cloud_logging() -> bool:
+    return get_settings().USE_GOOGLE_CLOUD_LOGGING

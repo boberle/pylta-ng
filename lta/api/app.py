@@ -4,10 +4,15 @@ from starlette.middleware.cors import CORSMiddleware
 import lta.api.backoffice.endpoints
 import lta.api.scheduler.endpoints
 import lta.api.userapp.endpoints
-from lta.api.configuration import get_allowed_origins, get_application_service
-from lta.log import setup_logging
+from lta.api.configuration import (
+    get_allowed_origins,
+    get_application_service,
+    get_use_google_cloud_logging,
+)
+from lta.log import setup_google_cloud_logging
 
-setup_logging()
+if get_use_google_cloud_logging():
+    setup_google_cloud_logging()
 
 app = FastAPI(openapi_url=None)
 
