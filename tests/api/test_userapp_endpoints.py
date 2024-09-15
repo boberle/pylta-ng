@@ -1,31 +1,13 @@
 from datetime import datetime, timezone
 
-import pytest
 from starlette.testclient import TestClient
 
-import lta.api.app
-from lta.api.configuration import get_user_repository
-from lta.authentication import AuthenticatedUser, get_authenticated_user
+from lta.api.configuration import get_settings
 from lta.domain.user import Device, DeviceOS
-from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.memory.user_repository import InMemoryUserRepository
-
-
-@pytest.fixture
-def test_client(
-    prefilled_memory_user_repository: UserRepository,
-) -> TestClient:
-
-    def override_get_user_repository() -> UserRepository:
-        return prefilled_memory_user_repository
-
-    def override_get_authenticated_user() -> AuthenticatedUser:
-        return AuthenticatedUser(id="user1", email_address="user1@idontexist.net")
-
-    app = lta.api.app.app
-    app.dependency_overrides[get_user_repository] = override_get_user_repository
-    app.dependency_overrides[get_authenticated_user] = override_get_authenticated_user
-    return TestClient(app)
+from lta.infra.scheduler.recording.notification_publisher import (
+    RecordingNotificationPublisher,
+)
 
 
 def test_register_device(
@@ -59,4 +41,31 @@ def test_register_device(
             first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
             last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
         ),
+    ]
+
+
+def test_send_test_notification(
+    test_client: TestClient,
+    android_recording_notification_publisher: RecordingNotificationPublisher,
+    ios_recording_notification_publisher: RecordingNotificationPublisher,
+) -> None:
+    response = test_client.get(
+        "/api/mobile/v1/test-notification/",
+    )
+    assert response.status_code == 200
+
+    assert android_recording_notification_publisher.recorder == [
+        dict(
+            device_token="user1_device1",
+            title=get_settings().TEST_NOTIFICATION_TITLE,
+            message=get_settings().TEST_NOTIFICATION_MESSAGE,
+        )
+    ]
+
+    assert ios_recording_notification_publisher.recorder == [
+        dict(
+            device_token="user1_device2",
+            title=get_settings().TEST_NOTIFICATION_TITLE,
+            message=get_settings().TEST_NOTIFICATION_MESSAGE,
+        )
     ]

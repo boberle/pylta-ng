@@ -22,7 +22,10 @@ from lta.domain.scheduler.assignment_service import (
     BasicAssignmentService,
     TestAssignmentService,
 )
-from lta.domain.scheduler.notification_pulisher import NotificationPublisher
+from lta.domain.scheduler.notification_pulisher import (
+    Notification,
+    NotificationPublisher,
+)
 from lta.domain.scheduler.notification_scheduler import NotificationScheduler
 from lta.domain.scheduler.notification_service import NotificationService
 from lta.domain.scheduler.scheduler_service import (
@@ -73,6 +76,9 @@ class Settings(BaseSettings):
     APPLICATION_SERVICE: Literal["back", "scheduler", "all"] = "back"
     USE_FIRESTORE_EMULATOR: bool = False
     USE_DIRECT_SCHEDULERS: bool = False
+
+    TEST_NOTIFICATION_TITLE: str = "Test Notification from Language Track App"
+    TEST_NOTIFICATION_MESSAGE: str = "This is a test notification."
 
     model_config = SettingsConfigDict(env_file="settings/env.local-dev")
 
@@ -341,3 +347,10 @@ def get_survey_repository() -> SurveyRepository:
 
 def get_user_repository() -> UserRepository:
     return get_configuration().user_repository
+
+
+def get_test_notification() -> Notification:
+    return Notification(
+        title=get_settings().TEST_NOTIFICATION_TITLE,
+        message=get_settings().TEST_NOTIFICATION_MESSAGE,
+    )
