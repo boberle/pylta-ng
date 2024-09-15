@@ -8,7 +8,8 @@ class DeviceOS(str, Enum):
     ANDROID = "android"
     IOS = "ios"
     WEB = "web"
-    OTHER = "other"
+    WINDOWS = "windows"
+    MACOS = "macos"
 
 
 class Device(BaseModel):
