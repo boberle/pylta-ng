@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     )
     APPLICATION_SERVICE: Literal["back", "scheduler", "all"] = "back"
     USE_FIRESTORE_EMULATOR: bool = False
+    USE_FIREBASE_AUTH_EMULATOR: bool = False
     USE_DIRECT_SCHEDULERS: bool = False
 
     TEST_NOTIFICATION_TITLE: str = "Test Notification from Language Track App"
@@ -296,10 +297,13 @@ def get_firebase_app() -> firebase_admin.App:
     """
     Initialize Firebase App.
 
-    If you want to use the Firestore emulator, run:
+    If you want to use the Firestore and/or the Auth emulator, run:
 
-        ./firebase-tools-linux --project dummy-project emulators:start --only firestore
+        ./firebase-tools-linux --project dummy-project emulators:start --only firestore,auth
     """
+    if get_settings().USE_FIREBASE_AUTH_EMULATOR:
+        os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "127.0.0.1:9099"
+
     return firebase_admin.initialize_app(
         options=dict(
             projectId=get_settings().PROJECT_NAME,
