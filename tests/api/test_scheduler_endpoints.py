@@ -62,6 +62,7 @@ def test_schedule_assignment(
         "user1": {
             "f3a3c571-7476-4899-b5a3-adb3254a9493": Assignment(
                 id="f3a3c571-7476-4899-b5a3-adb3254a9493",
+                title="Sample first survey!",
                 user_id="user1",
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 3, 4, 5),

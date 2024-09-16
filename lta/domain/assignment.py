@@ -7,6 +7,7 @@ AnswerType = int | list[int] | str
 
 class Assignment(BaseModel):
     id: str
+    title: str
     user_id: str
     survey_id: str
     created_at: datetime

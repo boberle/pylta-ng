@@ -18,6 +18,7 @@ from lta.infra.repositories.firestore.utils import get_collection_count, make_fi
 class StoredAssignment(BaseModel):
     revision: Literal[1] = 1
     id: str
+    title: str
     user_id: str
     survey_id: str
     created_at: datetime
@@ -31,6 +32,7 @@ class StoredAssignment(BaseModel):
     def from_domain(cls, assigment: Assignment) -> StoredAssignment:
         return StoredAssignment(
             id=assigment.id,
+            title=assigment.title,
             user_id=assigment.user_id,
             survey_id=assigment.survey_id,
             created_at=assigment.created_at,
@@ -48,6 +50,7 @@ class StoredAssignment(BaseModel):
     def to_domain(self) -> Assignment:
         return Assignment(
             id=self.id,
+            title=self.title,
             user_id=self.user_id,
             survey_id=self.survey_id,
             created_at=self.created_at,
@@ -81,10 +84,12 @@ class FirestoreAssignmentRepository(AssignmentRepository):
         user_id: str,
         id: str,
         survey_id: str,
+        survey_title: str,
         created_at: datetime,
     ) -> None:
         assigment = Assignment(
             id=id,
+            title=survey_title,
             survey_id=survey_id,
             user_id=user_id,
             created_at=created_at,

@@ -67,6 +67,7 @@ def test_notify_user__check_assignment_is_not_submitted(
                 "user1": {
                     "assignment1": Assignment(
                         id="assignment1",
+                        title="Sample first survey!",
                         user_id="user1",
                         survey_id="survey1",
                         created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),
@@ -84,6 +85,7 @@ def test_notify_user__check_assignment_is_not_submitted(
                     ),
                     "assignment2": Assignment(
                         id="assignment2",
+                        title="Sample first survey!",
                         user_id="user1",
                         survey_id="survey1",
                         created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),

@@ -22,6 +22,7 @@ class AssignmentRepository(Protocol):
         user_id: str,
         id: str,
         survey_id: str,
+        survey_title: str,
         created_at: datetime,
     ) -> None: ...
 

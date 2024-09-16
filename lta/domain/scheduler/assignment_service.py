@@ -28,11 +28,13 @@ class BasicAssignmentService:
     def create_assignment(
         self, user_id: str, survey_id: str, ref_time: datetime
     ) -> None:
+        survey = self.survey_repository.get_survey(survey_id)
         assignment_id = str(make_uuid4(self.rand))
         self.assignment_repository.create_assignment(
             user_id=user_id,
             id=assignment_id,
             survey_id=survey_id,
+            survey_title=survey.title,
             created_at=ref_time,
         )
         survey = self.survey_repository.get_survey(survey_id)

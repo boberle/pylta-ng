@@ -29,10 +29,12 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         user_id: str,
         id: str,
         survey_id: str,
+        survey_title: str,
         created_at: datetime,
     ) -> None:
         assignment = Assignment(
             id=id,
+            title=survey_title,
             user_id=user_id,
             survey_id=survey_id,
             created_at=created_at,

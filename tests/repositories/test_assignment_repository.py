@@ -10,6 +10,7 @@ def test_get_assignment(empty_assignment_repository: AssignmentRepository) -> No
     created_at = datetime.now(tz=timezone.utc)
     assignment = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -18,6 +19,7 @@ def test_get_assignment(empty_assignment_repository: AssignmentRepository) -> No
     empty_assignment_repository.create_assignment(
         id=assignment.id,
         survey_id=assignment.survey_id,
+        survey_title=assignment.title,
         user_id=assignment.user_id,
         created_at=assignment.created_at,
     )
@@ -40,6 +42,7 @@ def test_list_and_count_assignments(
     ref_time = datetime.now(tz=timezone.utc)
     assignment1 = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=ref_time,
@@ -47,6 +50,7 @@ def test_list_and_count_assignments(
     )
     assignment2 = Assignment(
         id="2",
+        title="Assignment 2",
         survey_id="survey1",
         user_id="user1",
         created_at=ref_time - timedelta(minutes=10),
@@ -54,6 +58,7 @@ def test_list_and_count_assignments(
     )
     assignment3 = Assignment(
         id="3",
+        title="Assignment 3",
         survey_id="survey1",
         user_id="user1",
         created_at=ref_time + timedelta(minutes=10),
@@ -61,6 +66,7 @@ def test_list_and_count_assignments(
     )
     assignment4 = Assignment(
         id="4",
+        title="Assignment 4",
         survey_id="survey1",
         user_id="user2",
         created_at=ref_time,
@@ -70,6 +76,7 @@ def test_list_and_count_assignments(
         empty_assignment_repository.create_assignment(
             id=assignment.id,
             survey_id=assignment.survey_id,
+            survey_title=assignment.title,
             user_id=assignment.user_id,
             created_at=assignment.created_at,
         )
@@ -95,6 +102,7 @@ def test_notify_user(empty_assignment_repository: AssignmentRepository) -> None:
     created_at = datetime.now(tz=timezone.utc)
     assignment = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -103,6 +111,7 @@ def test_notify_user(empty_assignment_repository: AssignmentRepository) -> None:
     empty_assignment_repository.create_assignment(
         id=assignment.id,
         survey_id=assignment.survey_id,
+        survey_title=assignment.title,
         user_id=assignment.user_id,
         created_at=assignment.created_at,
     )
@@ -126,6 +135,7 @@ def test_open_assignment(empty_assignment_repository: AssignmentRepository) -> N
     created_at = datetime.now(tz=timezone.utc)
     assignment = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -134,6 +144,7 @@ def test_open_assignment(empty_assignment_repository: AssignmentRepository) -> N
     empty_assignment_repository.create_assignment(
         id=assignment.id,
         survey_id=assignment.survey_id,
+        survey_title=assignment.title,
         user_id=assignment.user_id,
         created_at=assignment.created_at,
     )
@@ -159,6 +170,7 @@ def test_submit_assignment(empty_assignment_repository: AssignmentRepository) ->
     created_at = datetime.now(tz=timezone.utc)
     assignment = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -167,6 +179,7 @@ def test_submit_assignment(empty_assignment_repository: AssignmentRepository) ->
     empty_assignment_repository.create_assignment(
         id=assignment.id,
         survey_id=assignment.survey_id,
+        survey_title=assignment.title,
         user_id=assignment.user_id,
         created_at=assignment.created_at,
     )
@@ -197,6 +210,7 @@ def test_list_pending_assignments(
 
     expired_assignment = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=lookup_time - timedelta(hours=3),
@@ -204,6 +218,7 @@ def test_list_pending_assignments(
     )
     answered_assignment = Assignment(
         id="2",
+        title="Assignment 2",
         survey_id="survey1",
         user_id="user1",
         created_at=lookup_time - timedelta(minutes=30),
@@ -211,6 +226,7 @@ def test_list_pending_assignments(
     )
     pending_assignment_user1_a = Assignment(
         id="4",
+        title="Assignment 4",
         survey_id="survey1",
         user_id="user1",
         created_at=lookup_time - timedelta(minutes=10),
@@ -218,6 +234,7 @@ def test_list_pending_assignments(
     )
     pending_assignment_user1_b = Assignment(
         id="5",
+        title="Assignment 5",
         survey_id="survey1",
         user_id="user1",
         created_at=lookup_time - timedelta(minutes=30),
@@ -225,6 +242,7 @@ def test_list_pending_assignments(
     )
     pending_assignment_user1_c = Assignment(
         id="6",
+        title="Assignment 6",
         survey_id="survey1",
         user_id="user1",
         created_at=lookup_time,
@@ -232,6 +250,7 @@ def test_list_pending_assignments(
     )
     pending_assignment_user2 = Assignment(
         id="7",
+        title="Assignment 7",
         survey_id="survey1",
         user_id="user2",
         created_at=lookup_time - timedelta(minutes=30),
@@ -248,6 +267,7 @@ def test_list_pending_assignments(
         empty_assignment_repository.create_assignment(
             id=assignment.id,
             survey_id=assignment.survey_id,
+            survey_title=assignment.title,
             user_id=assignment.user_id,
             created_at=assignment.created_at,
         )
@@ -302,6 +322,7 @@ def test_count_non_answered_assignments(
     created_at = datetime.now(tz=timezone.utc)
     assignment1 = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -309,6 +330,7 @@ def test_count_non_answered_assignments(
     )
     assignment2 = Assignment(
         id="2",
+        title="Assignment 2",
         survey_id="survey2",
         user_id="user1",
         created_at=created_at,
@@ -316,6 +338,7 @@ def test_count_non_answered_assignments(
     )
     assignment3 = Assignment(
         id="3",
+        title="Assignment 3",
         survey_id="survey2",
         user_id="user1",
         created_at=created_at,
@@ -323,6 +346,7 @@ def test_count_non_answered_assignments(
     )
     assignment4 = Assignment(
         id="4",
+        title="Assignment 4",
         survey_id="survey2",
         user_id="user2",
         created_at=created_at,
@@ -332,6 +356,7 @@ def test_count_non_answered_assignments(
         empty_assignment_repository.create_assignment(
             id=assignment.id,
             survey_id=assignment.survey_id,
+            survey_title=assignment.title,
             user_id=assignment.user_id,
             created_at=assignment.created_at,
         )
@@ -378,6 +403,7 @@ def test_assignment_is_own_by_user(
     created_at = datetime.now(tz=timezone.utc)
     assignment1 = Assignment(
         id="1",
+        title="Assignment 1",
         survey_id="survey1",
         user_id="user1",
         created_at=created_at,
@@ -385,6 +411,7 @@ def test_assignment_is_own_by_user(
     )
     assignment2 = Assignment(
         id="2",
+        title="Assignment 2",
         survey_id="survey2",
         user_id="user2",
         created_at=created_at,
@@ -394,6 +421,7 @@ def test_assignment_is_own_by_user(
         empty_assignment_repository.create_assignment(
             id=assignment.id,
             survey_id=assignment.survey_id,
+            survey_title=assignment.title,
             user_id=assignment.user_id,
             created_at=assignment.created_at,
         )

@@ -23,6 +23,7 @@ def assert_scheduler_service_for_date_20230102(
         "user1": {
             "81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd": Assignment(
                 id="81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd",
+                title="Sample first survey!",
                 user_id="user1",
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc),
@@ -34,6 +35,7 @@ def assert_scheduler_service_for_date_20230102(
             ),
             "f3a3c571-7476-4899-b5a3-adb3254a9493": Assignment(
                 id="f3a3c571-7476-4899-b5a3-adb3254a9493",
+                title="Sample first survey!",
                 user_id="user1",
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc),
@@ -47,6 +49,7 @@ def assert_scheduler_service_for_date_20230102(
         "user2": {
             "1f0e4b4a-886c-4a30-9c26-ffa8ccce240c": Assignment(
                 id="1f0e4b4a-886c-4a30-9c26-ffa8ccce240c",
+                title="Sample first survey!",
                 user_id="user2",
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc),
@@ -58,6 +61,7 @@ def assert_scheduler_service_for_date_20230102(
             ),
             "649dda6e-b49c-43dc-acbc-408cc5521660": Assignment(
                 id="649dda6e-b49c-43dc-acbc-408cc5521660",
+                title="Sample first survey!",
                 user_id="user2",
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc),

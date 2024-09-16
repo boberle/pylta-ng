@@ -64,7 +64,7 @@ async def get_assignments(
         assignments=[
             Assignment(
                 id=a.id,
-                title="TODO",
+                title=a.title,
                 answered=a.answers is not None,
                 date=a.created_at,
             )
