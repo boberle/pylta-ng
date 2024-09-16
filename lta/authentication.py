@@ -9,13 +9,14 @@ from firebase_admin._token_gen import (
     RevokedIdTokenError,
 )
 
-from lta.api.configuration import get_admin_email_addresses, get_firebase_app
+from lta.api.configuration import get_firebase_app
 
 
 @dataclass
 class AuthenticatedUser:
     id: str
     email_address: str
+    is_admin: bool = False
 
 
 def get_authenticated_user(request: Request) -> AuthenticatedUser:
@@ -31,7 +32,7 @@ def get_authenticated_user(request: Request) -> AuthenticatedUser:
 
     app = get_firebase_app()
     try:
-        data = firebase_admin.auth.verify_id_token(token, app=app)
+        claims = firebase_admin.auth.verify_id_token(token, app=app)
     except (
         ValueError,
         InvalidIdTokenError,
@@ -42,14 +43,18 @@ def get_authenticated_user(request: Request) -> AuthenticatedUser:
     ):
         raise HTTPException(status_code=403, detail="Invalid or expired token")
 
-    # example of data:
+    # example of claims:
     # {'iss': 'https://securetoken.google.com/testalpenglow', 'aud': 'testalpenglow', 'auth_time': 1724887049, 'user_id': 'aoroQmmmTkcSUPlXpp87TkiQIyG3', 'sub': 'aoroQmmmTkcSUPlXpp87TkiQIyG3', 'iat': 1724917110, 'exp': 1724920710, 'email': 'foobar@gmail.com', 'email_verified': False, 'firebase': {'identities': {'email': ['foobar@gmail.com']}, 'sign_in_provider': 'password'}, 'uid': 'aoroQmmmTkcSUPlXpp87TkiQIyG3'}
-    return AuthenticatedUser(id=data["uid"], email_address=data["email"])
+    return AuthenticatedUser(
+        id=claims["uid"],
+        email_address=claims["email"],
+        is_admin=claims.get("admin", False),
+    )
 
 
 def get_admin_user(request: Request) -> AuthenticatedUser:
     user = get_authenticated_user(request)
-    if user.email_address not in get_admin_email_addresses():
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
     return user

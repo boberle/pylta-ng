@@ -62,7 +62,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "dummy-project"
     PROJECT_LOCATION: str = "europe-west1"
     ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
-    ADMIN_EMAIL_ADDRESSES: list[str] = Field(default_factory=list)
     ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE: int = 20
     SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES: int = 30
     CLOUD_TASKS_SERVICE_ACCOUNT_ID: EmailStr = (
@@ -317,10 +316,6 @@ def get_project_name() -> str:
 
 def get_allowed_origins() -> list[str]:
     return get_settings().ALLOWED_ORIGINS
-
-
-def get_admin_email_addresses() -> list[str]:
-    return get_settings().ADMIN_EMAIL_ADDRESSES
 
 
 def get_scheduler_service() -> SchedulerService:
