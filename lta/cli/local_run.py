@@ -11,7 +11,9 @@ app = Typer()
 
 @app.command()
 def add_surveys(
-    source: Path = Option(..., help="path to the source JSON file"),
+    source: Path = Option(
+        Path("testdata/surveys.json"), help="path to the source JSON file"
+    ),
 ) -> None:
     set_environment(Environment.LOCAL_DEV)
     surveys = json.load(source.open())
