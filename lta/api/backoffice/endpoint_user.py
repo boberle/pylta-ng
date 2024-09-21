@@ -47,7 +47,7 @@ class Device(BaseModel):
     os: DeviceOS
     version: str | None
     first_connection: datetime
-    last_connection: datetime | None
+    last_connection: datetime
 
 
 class UserResponse(BaseModel):

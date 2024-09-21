@@ -17,7 +17,7 @@ class Device(BaseModel):
     os: DeviceOS
     version: str | None
     first_connection: datetime
-    last_connection: datetime | None = None
+    last_connection: datetime
 
     def add_connection_time(self, connection_time: datetime) -> None:
         self.last_connection = connection_time

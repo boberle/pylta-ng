@@ -41,6 +41,7 @@ class InMemoryUserRepository(UserRepository):
                 os=os,
                 version=version,
                 first_connection=date,
+                last_connection=date,
             )
         )
 
