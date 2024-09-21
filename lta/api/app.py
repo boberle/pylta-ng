@@ -31,7 +31,7 @@ application_service = get_application_service()
 if application_service == "back":
     app.include_router(lta.api.backoffice.endpoints.router, prefix="/api/v1")
     app.include_router(lta.api.userapp.endpoints.router, prefix="/api/mobile/v1")
-    app.include_router(lta.api.common.endpoints.router)
+    app.include_router(lta.api.common.endpoints.router, prefix="/api/mobile/v1")
 
 elif application_service == "scheduler":
     app.include_router(lta.api.scheduler.endpoints.router)
@@ -40,7 +40,7 @@ elif application_service == "all":
     app.include_router(lta.api.backoffice.endpoints.router, prefix="/api/v1")
     app.include_router(lta.api.userapp.endpoints.router, prefix="/api/mobile/v1")
     app.include_router(lta.api.scheduler.endpoints.router)
-    app.include_router(lta.api.common.endpoints.router)
+    app.include_router(lta.api.common.endpoints.router, prefix="/api/mobile/v1")
 
 else:
     raise ValueError(f"Invalid application service: {application_service}")
