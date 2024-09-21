@@ -11,7 +11,6 @@ router = APIRouter()
 
 
 class ChangePasswordRequest(BaseModel):
-    current_password: str
     new_password: str
 
 
@@ -28,4 +27,4 @@ def change_password(
         get_authenticated_user_with_default_password_allowed
     ),
 ) -> None:
-    change_user_password(user, r.current_password, r.new_password)
+    change_user_password(user, "", r.new_password)
