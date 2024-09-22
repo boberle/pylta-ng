@@ -32,7 +32,7 @@ class UserListResponse(BaseModel):
     users: list[UserItemResponse]
 
 
-@router.get("/users/")
+@router.get("/")
 async def get_users(
     configuration: AppConfiguration = Depends(get_configuration),
     admin_id: str = Depends(get_admin_user),
@@ -76,7 +76,7 @@ class UserResponse(BaseModel):
         )
 
 
-@router.get("/users/{id:str}/")
+@router.get("/{id:str}/")
 async def get_user(
     id: str,
     configuration: AppConfiguration = Depends(get_configuration),
@@ -112,7 +112,7 @@ class UserAssignmentListResponse(BaseModel):
     assignments: list[UserAssignmentItemResponse]
 
 
-@router.get("/users/{id:str}/assignments/")
+@router.get("/{id:str}/assignments/")
 async def get_user_assignments(
     id: str,
     configuration: AppConfiguration = Depends(get_configuration),

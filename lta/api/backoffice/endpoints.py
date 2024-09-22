@@ -7,4 +7,4 @@ import lta.api.backoffice.endpoint_user
 router = APIRouter()
 
 
-router.include_router(lta.api.backoffice.endpoint_user.router)
+router.include_router(lta.api.backoffice.endpoint_user.router, prefix="/users")
