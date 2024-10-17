@@ -105,6 +105,8 @@ def change_user_password(
     firebase_admin.auth.update_user(user.id, password=new_password, app=app)
 
     custom_claims = firebase_admin.auth.get_user(user.id, app).custom_claims
+    if custom_claims is None:
+        custom_claims = dict()
     custom_claims[HAS_SET_OWN_PASSWORD_FIELD] = True
     firebase_admin.auth.set_custom_user_claims(
         user.id, custom_claims=custom_claims, app=app
