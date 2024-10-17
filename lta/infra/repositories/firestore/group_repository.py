@@ -75,3 +75,13 @@ class FirestoreGroupRepository(GroupRepository):
         if user_id in group.user_ids:
             group.user_ids.remove(user_id)
             group_ref.set(group.model_dump())
+
+    def set_users(self, group_id: str, user_ids: list[str]) -> None:
+        group_ref = self.client.collection(self.collection_name).document(group_id)
+        doc = group_ref.get()
+        if not doc.exists:
+            raise GroupNotFound(group_id=group_id)
+
+        group = pydantic.TypeAdapter(StoredGroup).validate_python(doc.to_dict())
+        group.user_ids = user_ids
+        group_ref.set(group.model_dump())

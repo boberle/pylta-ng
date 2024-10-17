@@ -89,3 +89,15 @@ def test_remove_user_from_group(empty_group_repository: GroupRepository) -> None
 
     with pytest.raises(GroupNotFound):
         empty_group_repository.remove_user_from_group("nonexistent_group", "user1")
+
+
+def test_set_users(empty_group_repository: GroupRepository) -> None:
+    empty_group_repository.create_group(
+        "group1", "Group 1", datetime.now(tz=timezone.utc)
+    )
+    empty_group_repository.set_users("group1", ["user1", "user2"])
+    group = empty_group_repository.get_group("group1")
+    assert group.user_ids == ["user1", "user2"]
+
+    with pytest.raises(GroupNotFound):
+        empty_group_repository.set_users("nonexistent_group", ["user1", "user2"])

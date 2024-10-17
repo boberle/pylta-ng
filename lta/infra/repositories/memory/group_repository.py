@@ -41,3 +41,8 @@ class InMemoryGroupRepository(GroupRepository):
             raise GroupNotFound(group_id=group_id)
         if user_id in self.groups[group_id].user_ids:
             self.groups[group_id].user_ids.remove(user_id)
+
+    def set_users(self, group_id: str, user_ids: list[str]) -> None:
+        if group_id not in self.groups:
+            raise GroupNotFound(group_id=group_id)
+        self.groups[group_id].user_ids = user_ids

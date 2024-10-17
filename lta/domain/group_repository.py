@@ -32,3 +32,6 @@ class GroupRepository(Protocol):
 
     @abstractmethod
     def remove_user_from_group(self, group_id: str, user_id: str) -> None: ...
+
+    @abstractmethod
+    def set_users(self, group_id: str, user_ids: list[str]) -> None: ...
