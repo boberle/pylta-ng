@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -20,7 +20,9 @@ router = APIRouter()
 @router.get("/schedule-assignments/")
 def schedule_assignments(
     ref_date: date = Query(
-        default_factory=lambda: datetime.now(tz=timezone.utc).date(),
+        default_factory=lambda: (
+            datetime.now(tz=timezone.utc) + timedelta(days=1)
+        ).date(),
     ),
     test: bool = False,
     scheduler_service: SchedulerService = Depends(get_scheduler_service),

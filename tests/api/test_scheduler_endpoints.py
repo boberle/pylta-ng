@@ -1,8 +1,11 @@
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
 from lta.domain.assignment import Assignment
+from lta.domain.schedule import TimeRange
+from lta.domain.schedule_repository import ScheduleCreation, ScheduleRepository
+from lta.domain.survey_repository import SurveyRepository
 from lta.infra.repositories.memory.assignment_repository import (
     InMemoryAssignmentRepository,
 )
@@ -39,9 +42,51 @@ def test_schedule_assignments(
 
 def test_schedule_assignments__no_ref_date(
     test_client: TestClient,
+    prefilled_memory_schedule_repository: ScheduleRepository,
+    notification_scheduler: RecordingDirectNotificationScheduler,
+    prefilled_memory_survey_repository: SurveyRepository,
 ) -> None:
+    """Should be tomorrow's date by default."""
+    ref = datetime.now(tz=timezone.utc).date()
+    prefilled_memory_schedule_repository.create_schedule(
+        id="new-schedule-1",
+        schedule=ScheduleCreation(
+            survey_id="survey1",
+            start_date=ref,
+            end_date=ref,
+            time_ranges=[TimeRange(start_time=time(8, 0), end_time=time(9, 0))],
+            user_ids=["user1"],
+        ),
+    )
+    prefilled_memory_schedule_repository.create_schedule(
+        id="new-schedule-2",
+        schedule=ScheduleCreation(
+            survey_id="survey2",
+            start_date=(ref + timedelta(days=1)),
+            end_date=(ref + timedelta(days=1)),
+            time_ranges=[TimeRange(start_time=time(8, 0), end_time=time(9, 0))],
+            user_ids=["user1"],
+        ),
+    )
+
     response = test_client.get("/schedule-assignments/")
     assert response.status_code == 200
+
+    assert notification_scheduler.recorder[0]["dt"].date() == (ref + timedelta(days=1))
+    assert (
+        notification_scheduler.recorder[0]["notification_message"]
+        == prefilled_memory_survey_repository.get_survey(
+            "survey2"
+        ).publish_notification.message
+    )
+
+    assert notification_scheduler.recorder[1]["dt"].date() == (ref + timedelta(days=1))
+    assert (
+        notification_scheduler.recorder[1]["notification_message"]
+        == prefilled_memory_survey_repository.get_survey(
+            "survey2"
+        ).soon_to_expire_notification.message
+    )
 
 
 def test_schedule_assignment(
