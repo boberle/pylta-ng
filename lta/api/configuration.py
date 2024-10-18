@@ -20,7 +20,6 @@ from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
 from lta.domain.scheduler.assignment_service import (
     AssignmentService,
     BasicAssignmentService,
-    TestAssignmentService,
 )
 from lta.domain.scheduler.notification_pulisher import (
     Notification,
@@ -175,16 +174,6 @@ class AppConfiguration:
         )
 
     @cached_property
-    def test_assignment_service(self) -> AssignmentService:
-        if get_settings().USE_DIRECT_SCHEDULERS:
-            notification_scheduler = self.direct_notification_scheduler
-        else:
-            notification_scheduler = self.cloud_tasks_notification_scheduler
-        return TestAssignmentService(
-            notification_scheduler=notification_scheduler,
-        )
-
-    @cached_property
     def cloud_tasks_assignment_scheduler(self) -> AssignmentScheduler:
         return CloudTasksAssignmentScheduler(
             tasks_api=CloudTasksAPI(
@@ -328,10 +317,6 @@ def get_test_scheduler_service() -> SchedulerService:
 
 def get_assignment_service() -> AssignmentService:
     return get_configuration().assignment_service
-
-
-def get_test_assignment_service() -> AssignmentService:
-    return get_configuration().test_assignment_service
 
 
 def get_notification_service() -> NotificationService:
