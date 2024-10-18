@@ -172,7 +172,7 @@ def notify_user(
     user: AuthenticatedUser = Depends(get_authenticated_user),
     test_notification: Notification = Depends(get_test_notification),
 ) -> None:
-    notification_service.notify_user(
+    notification_service.send_notification(
         user_id=user.id,
         notification_title=test_notification.title,
         notification_message=test_notification.message,

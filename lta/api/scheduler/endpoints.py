@@ -7,11 +7,15 @@ from lta.api.configuration import (
     get_assignment_service,
     get_notification_service,
     get_scheduler_service,
-    get_test_assignment_service,
     get_test_scheduler_service,
 )
 from lta.domain.scheduler.assignment_service import AssignmentService
-from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.scheduler.notification_service import (
+    AlwaysSendNotificationPolicy,
+    NotificationSendingAssignmentNotSubmitterPolicy,
+    NotificationSendingPolicy,
+    NotificationService,
+)
 from lta.domain.scheduler.scheduler_service import SchedulerService
 
 router = APIRouter()
@@ -44,19 +48,10 @@ class ScheduleAssignmentRequest(BaseModel):
 @router.post("/schedule-assignment/")
 def schedule_assignment(
     request: ScheduleAssignmentRequest,
-    test: bool = False,
     ref_time: datetime = Query(default_factory=lambda: datetime.now(tz=timezone.utc)),
     assignment_service: AssignmentService = Depends(get_assignment_service),
-    test_assignment_service: AssignmentService = Depends(get_test_assignment_service),
 ) -> None:
-    if test:
-        service = test_assignment_service
-    else:
-        service = assignment_service
-        assert request.user_id != "test"
-        assert request.survey_id != "test"
-
-    service.create_assignment(
+    assignment_service.create_assignment(
         user_id=request.user_id, survey_id=request.survey_id, ref_time=ref_time
     )
 
@@ -65,7 +60,8 @@ class NotifyUserRequest(BaseModel):
     user_id: str
     notification_title: str
     notification_message: str
-    assignment_id: str | None = None
+    assignment_id: str
+    always_send_notification: bool = False
 
 
 @router.post("/notify-user/")
@@ -73,16 +69,16 @@ def notify_user(
     request: NotifyUserRequest,
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> None:
-    if request.assignment_id is not None:
-        notification_service.notify_user_if_assignment_not_submitted(
-            user_id=request.user_id,
-            assignment_id=request.assignment_id,
-            notification_title=request.notification_title,
-            notification_message=request.notification_message,
-        )
+    notification_policy: NotificationSendingPolicy
+    if request.always_send_notification:
+        notification_policy = AlwaysSendNotificationPolicy()
     else:
-        notification_service.notify_user(
-            user_id=request.user_id,
-            notification_title=request.notification_title,
-            notification_message=request.notification_message,
-        )
+        notification_policy = NotificationSendingAssignmentNotSubmitterPolicy()
+
+    notification_service.notify_user(
+        user_id=request.user_id,
+        assignment_id=request.assignment_id,
+        notification_title=request.notification_title,
+        notification_message=request.notification_message,
+        policy=notification_policy,
+    )

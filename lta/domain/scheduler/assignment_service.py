@@ -39,18 +39,19 @@ class BasicAssignmentService:
         )
 
         first_notification_time = ref_time
-        self.notification_scheduler.schedule_notification_for_now(
+        self.notification_scheduler.schedule_initial_notification(
             user_id=user_id,
+            assignment_id=assignment_id,
             notification_title=survey.publish_notification.title,
             notification_message=survey.publish_notification.message,
             when=first_notification_time,
         )
 
         second_notification_time = ref_time + self.soon_to_expire_notification_delay
-        self.notification_scheduler.schedule_notification_for_later(
+        self.notification_scheduler.schedule_reminder_notification(
             user_id=user_id,
+            assignment_id=assignment_id,
             notification_title=survey.soon_to_expire_notification.title,
             notification_message=survey.soon_to_expire_notification.message,
             when=second_notification_time,
-            assignment_id=assignment_id,
         )

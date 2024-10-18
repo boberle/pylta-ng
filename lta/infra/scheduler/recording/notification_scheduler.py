@@ -11,42 +11,52 @@ from lta.infra.scheduler.direct.notification_scheduler import (
 class RecordingDirectNotificationScheduler(DirectNotificationScheduler):
     recorder: list[dict[str, Any]] = field(default_factory=list)
 
-    def schedule_notification_for_now(
+    def schedule_initial_notification(
         self,
         user_id: str,
+        assignment_id: str,
         notification_title: str,
         notification_message: str,
         when: datetime | None = None,
     ) -> None:
         self.recorder.append(
             dict(
-                dt=when,
+                assignment_id=assignment_id,
                 user_id=user_id,
                 notification_title=notification_title,
                 notification_message=notification_message,
+                when=when,
             )
         )
-        super().schedule_notification_for_now(
-            user_id, notification_title, notification_message, when
+        super().schedule_initial_notification(
+            user_id=user_id,
+            assignment_id=assignment_id,
+            notification_title=notification_title,
+            notification_message=notification_message,
+            when=when,
         )
 
-    def schedule_notification_for_later(
+    def schedule_reminder_notification(
         self,
         user_id: str,
+        assignment_id: str,
         notification_title: str,
         notification_message: str,
         when: datetime,
-        assignment_id: str | None = None,
     ) -> None:
         self.recorder.append(
             dict(
-                dt=when,
+                assignment_id=assignment_id,
                 user_id=user_id,
                 notification_title=notification_title,
                 notification_message=notification_message,
-                assignment_id=assignment_id,
+                when=when,
             )
         )
-        super().schedule_notification_for_later(
-            user_id, notification_title, notification_message, when, assignment_id
+        super().schedule_reminder_notification(
+            user_id=user_id,
+            assignment_id=assignment_id,
+            notification_title=notification_title,
+            notification_message=notification_message,
+            when=when,
         )
