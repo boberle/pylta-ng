@@ -61,13 +61,16 @@ class NotificationService:
         notification_title: str,
         notification_message: str,
         policy: NotificationSendingPolicy = AlwaysSendNotificationPolicy(),
+        notified_at: datetime | None = None,
     ) -> None:
         if not policy.should_send_notification(
             self.assignment_repository, user_id, assignment_id
         ):
             return
         self.send_notification(user_id, notification_title, notification_message)
-        self._set_notified_at(user_id, assignment_id, datetime.now(tz=timezone.utc))
+        self._set_notified_at(
+            user_id, assignment_id, notified_at or datetime.now(tz=timezone.utc)
+        )
 
     def _set_notified_at(
         self, user_id: str, assignment_id: str, when: datetime

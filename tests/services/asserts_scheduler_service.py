@@ -28,7 +28,14 @@ def assert_scheduler_service_for_date_20230102(
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc),
                 expired_at=datetime(2023, 1, 2, 15, 31, 3, tzinfo=timezone.utc),
-                notified_at=[],
+                notified_at=(
+                    [datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc)]
+                    + (
+                        [datetime(2023, 1, 2, 15, 1, 3, tzinfo=timezone.utc)]
+                        if not assignments_are_submitted
+                        else []
+                    )
+                ),
                 opened_at=[],
                 submitted_at=None,
                 answers=None,
@@ -40,7 +47,14 @@ def assert_scheduler_service_for_date_20230102(
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc),
                 expired_at=datetime(2023, 1, 2, 10, 9, 56, tzinfo=timezone.utc),
-                notified_at=[],
+                notified_at=(
+                    [datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc)]
+                    + (
+                        [datetime(2023, 1, 2, 9, 39, 56, tzinfo=timezone.utc)]
+                        if not assignments_are_submitted
+                        else []
+                    )
+                ),
                 opened_at=[],
                 submitted_at=None,
                 answers=None,
@@ -54,7 +68,14 @@ def assert_scheduler_service_for_date_20230102(
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc),
                 expired_at=datetime(2023, 1, 2, 15, 52, 37, tzinfo=timezone.utc),
-                notified_at=[],
+                notified_at=(
+                    [datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc)]
+                    + (
+                        [datetime(2023, 1, 2, 15, 22, 37, tzinfo=timezone.utc)]
+                        if not assignments_are_submitted
+                        else []
+                    )
+                ),
                 opened_at=[],
                 submitted_at=None,
                 answers=None,
@@ -66,7 +87,14 @@ def assert_scheduler_service_for_date_20230102(
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc),
                 expired_at=datetime(2023, 1, 2, 10, 31, 22, tzinfo=timezone.utc),
-                notified_at=[],
+                notified_at=(
+                    [datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc)]
+                    + (
+                        [datetime(2023, 1, 2, 10, 1, 22, tzinfo=timezone.utc)]
+                        if not assignments_are_submitted
+                        else []
+                    )
+                ),
                 opened_at=[],
                 submitted_at=None,
                 answers=None,
@@ -75,52 +103,56 @@ def assert_scheduler_service_for_date_20230102(
     }
     assert notification_scheduler.recorder == [
         {
-            "dt": datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey published!",
+            "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
         },
         {
-            "dt": datetime(2023, 1, 2, 9, 39, 56, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 9, 39, 56, tzinfo=timezone.utc),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",
             "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
         },
         {
-            "dt": datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc),
             "user_id": "user2",
             "notification_title": "Hey",
             "notification_message": "Survey published!",
+            "assignment_id": "649dda6e-b49c-43dc-acbc-408cc5521660",
         },
         {
-            "dt": datetime(2023, 1, 2, 10, 1, 22, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 10, 1, 22, tzinfo=timezone.utc),
             "user_id": "user2",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",
             "assignment_id": "649dda6e-b49c-43dc-acbc-408cc5521660",
         },
         {
-            "dt": datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey published!",
+            "assignment_id": "81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd",
         },
         {
-            "dt": datetime(2023, 1, 2, 15, 1, 3, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 15, 1, 3, tzinfo=timezone.utc),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",
             "assignment_id": "81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd",
         },
         {
-            "dt": datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc),
             "user_id": "user2",
             "notification_title": "Hey",
             "notification_message": "Survey published!",
+            "assignment_id": "1f0e4b4a-886c-4a30-9c26-ffa8ccce240c",
         },
         {
-            "dt": datetime(2023, 1, 2, 15, 22, 37, tzinfo=timezone.utc),
+            "when": datetime(2023, 1, 2, 15, 22, 37, tzinfo=timezone.utc),
             "user_id": "user2",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",

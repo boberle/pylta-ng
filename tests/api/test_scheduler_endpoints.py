@@ -72,7 +72,9 @@ def test_schedule_assignments__no_ref_date(
     response = test_client.get("/schedule-assignments/")
     assert response.status_code == 200
 
-    assert notification_scheduler.recorder[0]["dt"].date() == (ref + timedelta(days=1))
+    assert notification_scheduler.recorder[0]["when"].date() == (
+        ref + timedelta(days=1)
+    )
     assert (
         notification_scheduler.recorder[0]["notification_message"]
         == prefilled_memory_survey_repository.get_survey(
@@ -80,7 +82,9 @@ def test_schedule_assignments__no_ref_date(
         ).publish_notification.message
     )
 
-    assert notification_scheduler.recorder[1]["dt"].date() == (ref + timedelta(days=1))
+    assert notification_scheduler.recorder[1]["when"].date() == (
+        ref + timedelta(days=1)
+    )
     assert (
         notification_scheduler.recorder[1]["notification_message"]
         == prefilled_memory_survey_repository.get_survey(
@@ -112,7 +116,10 @@ def test_schedule_assignment(
                 survey_id="survey1",
                 created_at=datetime(2023, 1, 2, 3, 4, 5),
                 expired_at=datetime(2023, 1, 2, 4, 4, 5),
-                notified_at=[],
+                notified_at=[
+                    datetime(2023, 1, 2, 3, 4, 5),
+                    datetime(2023, 1, 2, 3, 34, 5),
+                ],
                 opened_at=[],
                 submitted_at=None,
                 answers=None,
@@ -122,13 +129,14 @@ def test_schedule_assignment(
 
     assert notification_scheduler.recorder == [
         {
-            "dt": datetime(2023, 1, 2, 3, 4, 5),
+            "when": datetime(2023, 1, 2, 3, 4, 5),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey published!",
+            "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
         },
         {
-            "dt": datetime(2023, 1, 2, 3, 34, 5),
+            "when": datetime(2023, 1, 2, 3, 34, 5),
             "user_id": "user1",
             "notification_title": "Hey",
             "notification_message": "Survey soon to expire!",
@@ -177,11 +185,20 @@ def test_notify_user(
     test_client: TestClient,
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
+    empty_memory_assignment_repository: InMemoryAssignmentRepository,
 ) -> None:
+    empty_memory_assignment_repository.create_assignment(
+        id="f3a3c571-7476-4899-b5a3-adb3254a9493",
+        survey_title="Sample first survey!",
+        user_id="user1",
+        survey_id="survey1",
+        created_at=datetime(2023, 1, 2, 3, 4, 5),
+    )
     response = test_client.post(
         "/notify-user/",
         json=dict(
             user_id="user1",
+            assignment_id="f3a3c571-7476-4899-b5a3-adb3254a9493",
             notification_title="notif title",
             notification_message="notif message",
         ),

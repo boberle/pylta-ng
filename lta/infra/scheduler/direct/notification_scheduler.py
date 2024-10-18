@@ -27,6 +27,7 @@ class DirectNotificationScheduler(NotificationScheduler):
             assignment_id=assignment_id,
             notification_title=notification_title,
             notification_message=notification_message,
+            notified_at=when,
         )
 
     def schedule_reminder_notification(
@@ -43,4 +44,5 @@ class DirectNotificationScheduler(NotificationScheduler):
             notification_title=notification_title,
             notification_message=notification_message,
             policy=NotificationSendingAssignmentNotSubmitterPolicy(),
+            notified_at=when,
         )
