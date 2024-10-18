@@ -1,9 +1,15 @@
+from datetime import date, datetime, timezone
 from pprint import pprint
 
 import firebase_admin.auth
 from typer import Option, Typer
 
-from lta.api.configuration import Environment, get_firebase_app, set_environment
+from lta.api.configuration import (
+    Environment,
+    get_firebase_app,
+    get_scheduler_service,
+    set_environment,
+)
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
 
 app = Typer()
@@ -47,6 +53,22 @@ def get_claims(
     app = get_firebase_app()
     custom_claims = firebase_admin.auth.get_user(user_id, app).custom_claims
     pprint(custom_claims)
+
+
+def date_parser(value: str) -> date:
+    return datetime.strptime(value, "%Y-%m-%d").date()
+
+
+@app.command()
+def schedule_assignments(
+    ref_date: date = Option(
+        datetime.now(tz=timezone.utc).date().strftime("%Y-%m-%d"), parser=date_parser
+    ),
+) -> None:
+    """Schedule assignments for the ref date"""
+    set_environment(Environment.LOCAL_PROD)
+    service = get_scheduler_service()
+    service.schedule_assignments_for_date(ref_date=ref_date)
 
 
 if __name__ == "__main__":
