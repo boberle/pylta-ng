@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from lta.domain.survey import Survey
 from lta.domain.survey_repository import (
+    TEST_SURVEY_ID,
     SurveyCreation,
     SurveyNotFound,
     SurveyRepository,
@@ -13,6 +14,9 @@ class InMemorySurveyRepository(SurveyRepository):
     surveys: dict[str, Survey] = field(default_factory=dict)
 
     def get_survey(self, id: str) -> Survey:
+        if id == TEST_SURVEY_ID:
+            return self.get_test_survey()
+
         if id not in self.surveys:
             raise SurveyNotFound(survey_id=id)
         return self.surveys[id]

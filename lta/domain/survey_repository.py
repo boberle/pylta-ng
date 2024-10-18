@@ -10,7 +10,10 @@ from lta.domain.survey import (
     OpenEndedQuestion,
     SingleChoiceQuestion,
     Survey,
+    get_test_survey,
 )
+
+TEST_SURVEY_ID = "__test__"
 
 
 @dataclass
@@ -28,6 +31,10 @@ class SurveyCreation(BaseModel):
 
 
 class SurveyRepository(Protocol):
+
+    def get_test_survey(self) -> Survey:
+        return get_test_survey()
+
     @abstractmethod
     def get_survey(self, id: str) -> Survey: ...
 

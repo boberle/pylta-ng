@@ -6,6 +6,7 @@ from google.cloud import firestore
 
 from lta.domain.survey import Survey
 from lta.domain.survey_repository import (
+    TEST_SURVEY_ID,
     SurveyCreation,
     SurveyNotFound,
     SurveyRepository,
@@ -22,6 +23,9 @@ class FirestoreSurveyRepository(SurveyRepository):
     collection_name: str = "surveys"
 
     def get_survey(self, id: str) -> Survey:
+        if id == TEST_SURVEY_ID:
+            return self.get_test_survey()
+
         doc_ref = self.client.collection(self.collection_name).document(id)
         doc = doc_ref.get()
         if not doc.exists:

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from lta.api.configuration import (
     AppConfiguration,
+    get_assignment_service,
     get_configuration,
     get_notification_service,
     get_test_notification,
@@ -12,6 +13,7 @@ from lta.api.configuration import (
 )
 from lta.authentication import AuthenticatedUser, get_authenticated_user
 from lta.domain.assignment import AnswerType
+from lta.domain.scheduler.assignment_service import AssignmentService
 from lta.domain.scheduler.notification_pulisher import Notification
 from lta.domain.scheduler.notification_service import NotificationService
 from lta.domain.survey import (
@@ -19,6 +21,7 @@ from lta.domain.survey import (
     OpenEndedQuestion,
     SingleChoiceQuestion,
 )
+from lta.domain.survey_repository import TEST_SURVEY_ID
 from lta.domain.user import DeviceOS
 from lta.domain.user_repository import UserRepository
 
@@ -176,4 +179,15 @@ def notify_user(
         user_id=user.id,
         notification_title=test_notification.title,
         notification_message=test_notification.message,
+    )
+
+
+@router.post("/schedule-test-assignment/")
+def schedule_assignment(
+    ref_time: datetime = Query(default_factory=lambda: datetime.now(tz=timezone.utc)),
+    user: AuthenticatedUser = Depends(get_authenticated_user),
+    assignment_service: AssignmentService = Depends(get_assignment_service),
+) -> None:
+    assignment_service.create_assignment(
+        user_id=user.id, survey_id=TEST_SURVEY_ID, ref_time=ref_time
     )
