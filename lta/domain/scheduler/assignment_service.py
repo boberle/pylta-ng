@@ -37,7 +37,6 @@ class BasicAssignmentService:
             survey_title=survey.title,
             created_at=ref_time,
         )
-        survey = self.survey_repository.get_survey(survey_id)
 
         first_notification_time = ref_time
         self.notification_scheduler.schedule_notification_for_now(
