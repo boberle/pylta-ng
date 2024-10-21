@@ -35,3 +35,6 @@ class UserRepository(Protocol):
 
     @abstractmethod
     def exists(self, id: str) -> bool: ...
+
+    @abstractmethod
+    def get_notification_email(self, id: str) -> str | None: ...

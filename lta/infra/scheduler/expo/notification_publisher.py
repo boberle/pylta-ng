@@ -4,11 +4,11 @@ import requests
 
 from lta.domain.scheduler.notification_pulisher import (
     Notification,
-    NotificationPublisher,
+    PushNotificationPublisher,
 )
 
 
-class ExpoNotificationPublisher(NotificationPublisher):
+class ExpoNotificationPublisher(PushNotificationPublisher):
     def publish(self, device_token: str, notification: Notification) -> None:
         response = requests.post(
             url="https://exp.host/--/api/v2/push/send",

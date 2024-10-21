@@ -57,3 +57,6 @@ class InMemoryUserRepository(UserRepository):
 
     def exists(self, id: str) -> bool:
         return id in self.users
+
+    def get_notification_email(self, id: str) -> str | None:
+        return self.users[id].notification_email

@@ -6,7 +6,7 @@ import pytest
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_service import BasicAssignmentService
-from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.scheduler.notification_service import PushNotificationService
 from lta.domain.scheduler.scheduler_service import (
     BasicSchedulerService,
     convert_int_to_time,
@@ -65,7 +65,7 @@ def test_schedule_assignments_for_date__using_direct_scheduler(
         else empty_memory_assignment_repository
     )
 
-    notification_service = NotificationService(
+    notification_service = PushNotificationService(
         ios_notification_publisher=ios_notification_publisher,
         android_notification_publisher=android_notification_publisher,
         user_repository=prefilled_memory_user_repository,

@@ -28,3 +28,4 @@ class User(BaseModel):
     email_address: EmailStr
     devices: list[Device] = Field(default_factory=list)
     created_at: datetime
+    notification_email: str | None = None

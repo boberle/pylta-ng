@@ -5,7 +5,7 @@ import pytest
 from lta.domain.assignment import Assignment
 from lta.domain.scheduler.notification_service import (
     NotificationSendingAssignmentNotSubmitterPolicy,
-    NotificationService,
+    PushNotificationService,
 )
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.memory.assignment_repository import (
@@ -28,7 +28,7 @@ def test_notify_user(prefilled_memory_user_repository: UserRepository) -> None:
         created_at=datetime(2022, 1, 1, 0, 0, tzinfo=timezone.utc),
     )
 
-    service = NotificationService(
+    service = PushNotificationService(
         ios_notification_publisher=ios_notification_publisher,
         android_notification_publisher=android_notification_publisher,
         user_repository=prefilled_memory_user_repository,
@@ -106,7 +106,7 @@ def test_notify_user__check_assignment_is_not_submitted(
             }
         }
     )
-    service = NotificationService(
+    service = PushNotificationService(
         ios_notification_publisher=ios_notification_publisher,
         android_notification_publisher=android_notification_publisher,
         user_repository=prefilled_memory_user_repository,

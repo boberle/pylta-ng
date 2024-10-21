@@ -80,3 +80,7 @@ class FirestoreUserRepository(UserRepository):
     def exists(self, id: str) -> bool:
         user_ref = self.client.collection(self.collection_name).document(id)
         return cast(bool, user_ref.get().exists)
+
+    def get_notification_email(self, id: str) -> str | None:
+        user = self.get_user(id)
+        return user.notification_email

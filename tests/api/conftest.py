@@ -19,7 +19,10 @@ from lta.domain.scheduler.assignment_service import (
     AssignmentService,
     BasicAssignmentService,
 )
-from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.scheduler.notification_service import (
+    NotificationService,
+    PushNotificationService,
+)
 from lta.domain.scheduler.scheduler_service import (
     BasicSchedulerService,
     SchedulerService,
@@ -54,8 +57,8 @@ def notification_service(
     ios_recording_notification_publisher: RecordingNotificationPublisher,
     android_recording_notification_publisher: RecordingNotificationPublisher,
     empty_memory_assignment_repository: AssignmentRepository,
-) -> NotificationService:
-    return NotificationService(
+) -> PushNotificationService:
+    return PushNotificationService(
         ios_notification_publisher=ios_recording_notification_publisher,
         android_notification_publisher=android_recording_notification_publisher,
         user_repository=prefilled_memory_user_repository,

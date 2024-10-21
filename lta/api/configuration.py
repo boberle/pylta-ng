@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from functools import cache, cached_property
-from typing import Literal
+from typing import Literal, Optional
 from urllib.parse import urljoin
 
 import firebase_admin
@@ -22,11 +22,15 @@ from lta.domain.scheduler.assignment_service import (
     BasicAssignmentService,
 )
 from lta.domain.scheduler.notification_pulisher import (
+    EmailNotificationPublisher,
     Notification,
-    NotificationPublisher,
+    PushNotificationPublisher,
 )
 from lta.domain.scheduler.notification_scheduler import NotificationScheduler
-from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.scheduler.notification_service import (
+    EmailNotificationService,
+    NotificationService,
+)
 from lta.domain.scheduler.scheduler_service import (
     BasicSchedulerService,
     SchedulerService,
@@ -54,6 +58,10 @@ from lta.infra.scheduler.google_tasks.assignment_scheduler import (
 from lta.infra.scheduler.google_tasks.notification_scheduler import (
     CloudTasksNotificationScheduler,
 )
+from lta.infra.scheduler.mailgun.notification_publisher import (
+    MailgunNotificationPublisher,
+    MailgunSettings,
+)
 from lta.infra.tasks_api import CloudTasksAPI
 
 
@@ -80,6 +88,10 @@ class Settings(BaseSettings):
     TEST_NOTIFICATION_MESSAGE: str = "This is a test notification."
 
     USE_GOOGLE_CLOUD_LOGGING: bool = False
+
+    MAILGUN_API_KEY: Optional[str] = None
+    MAILGUN_API_URL: Optional[str] = None
+    MAILGUN_SENDER: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file="settings/env.local-dev")
 
@@ -122,16 +134,37 @@ class AppConfiguration:
         return get_settings().ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
 
     @cached_property
-    def expo_notification_publisher(self) -> NotificationPublisher:
+    def expo_notification_publisher(self) -> PushNotificationPublisher:
         return ExpoNotificationPublisher()
 
     @cached_property
     def notification_service(self) -> NotificationService:
-        return NotificationService(
-            ios_notification_publisher=self.expo_notification_publisher,
-            android_notification_publisher=self.expo_notification_publisher,
+        # return PushNotificationService(
+        #    ios_notification_publisher=self.expo_notification_publisher,
+        #    android_notification_publisher=self.expo_notification_publisher,
+        #    user_repository=self.user_repository,
+        #    assignment_repository=self.assignment_repository,
+        # )
+        return EmailNotificationService(
+            notification_publisher=self.email_notification_publisher,
             user_repository=self.user_repository,
             assignment_repository=self.assignment_repository,
+        )
+
+    @cached_property
+    def email_notification_publisher(self) -> EmailNotificationPublisher:
+        api_key = get_settings().MAILGUN_API_KEY
+        api_url = get_settings().MAILGUN_API_URL
+        sender = get_settings().MAILGUN_SENDER
+        assert (
+            api_key and api_url and sender
+        ), "Missing Mailgun API key, API URL, or sender"
+        return MailgunNotificationPublisher(
+            settings=MailgunSettings(
+                api_key=api_key,
+                api_url=api_url,
+                sender=sender,
+            )
         )
 
     @cached_property
@@ -344,3 +377,7 @@ def get_test_notification() -> Notification:
 
 def get_use_google_cloud_logging() -> bool:
     return get_settings().USE_GOOGLE_CLOUD_LOGGING
+
+
+def get_email_notification_publisher() -> EmailNotificationPublisher:
+    return get_configuration().email_notification_publisher

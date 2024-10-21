@@ -3,12 +3,12 @@ from typing import Any
 
 from lta.domain.scheduler.notification_pulisher import (
     Notification,
-    NotificationPublisher,
+    PushNotificationPublisher,
 )
 
 
 @dataclass
-class RecordingNotificationPublisher(NotificationPublisher):
+class RecordingNotificationPublisher(PushNotificationPublisher):
     recorder: list[dict[str, Any]] = field(default_factory=list)
 
     def publish(self, device_token: str, notification: Notification) -> None:
