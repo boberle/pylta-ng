@@ -182,7 +182,7 @@ def notify_user(
     )
 
 
-@router.post("/schedule-test-assignment/")
+@router.get("/schedule-test-assignment/")
 def schedule_assignment(
     ref_time: datetime = Query(default_factory=lambda: datetime.now(tz=timezone.utc)),
     user: AuthenticatedUser = Depends(get_authenticated_user),
