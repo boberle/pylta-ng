@@ -6,11 +6,14 @@ from typer import Option, Typer
 
 from lta.api.configuration import (
     Environment,
+    get_email_notification_publisher,
     get_firebase_app,
     get_scheduler_service,
+    get_user_repository,
     set_environment,
 )
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
+from lta.domain.scheduler.notification_pulisher import Notification
 
 app = Typer()
 
@@ -69,6 +72,28 @@ def schedule_assignments(
     set_environment(Environment.LOCAL_PROD)
     service = get_scheduler_service()
     service.schedule_assignments_for_date(ref_date=ref_date)
+
+
+@app.command()
+def send_test_email_notification(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    email_notification_publisher = get_email_notification_publisher()
+    user_repository = get_user_repository()
+
+    notification_email = user_repository.get_notification_email(user_id)
+    if notification_email is None:
+        print(f"No notification email found for user id: {user_id}")
+        return
+
+    email_notification_publisher.publish(
+        notification_email,
+        Notification(
+            title="Test Email Notification",
+            message="This is a test email notification.",
+        ),
+    )
 
 
 if __name__ == "__main__":
