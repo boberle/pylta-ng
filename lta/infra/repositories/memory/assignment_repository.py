@@ -4,7 +4,11 @@ from datetime import datetime, timedelta
 from typing import List
 
 from lta.domain.assignment import AnswerType, Assignment
-from lta.domain.assignment_repository import AssignmentNotFound, AssignmentRepository
+from lta.domain.assignment_repository import (
+    AssignmentNotFound,
+    AssignmentRepository,
+    SubmissionTooLate,
+)
 
 
 @dataclass
@@ -73,7 +77,9 @@ class InMemoryAssignmentRepository(AssignmentRepository):
         when: datetime,
         answers: List[AnswerType],
     ) -> None:
-        assignment = self._get_assignment(user_id, assignment_id)
+        assignment = self._get_assignment(user_id, id)
+        if when > assignment.expired_at:
+            raise SubmissionTooLate(user_id=user_id, assignment_id=id)
         assignment.submitted_at = when
         assignment.answers = answers
 

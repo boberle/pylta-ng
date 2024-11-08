@@ -12,6 +12,12 @@ class AssignmentNotFound(Exception):
     assignment_id: str
 
 
+@dataclass
+class SubmissionTooLate(Exception):
+    user_id: str
+    assignment_id: str
+
+
 class AssignmentRepository(Protocol):
     @abstractmethod
     def get_assignment(self, user_id: str, id: str) -> Assignment: ...

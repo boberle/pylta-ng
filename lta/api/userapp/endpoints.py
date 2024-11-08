@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from lta.api.configuration import (
@@ -13,6 +13,7 @@ from lta.api.configuration import (
 )
 from lta.authentication import AuthenticatedUser, get_authenticated_user
 from lta.domain.assignment import AnswerType
+from lta.domain.assignment_repository import SubmissionTooLate
 from lta.domain.scheduler.assignment_service import AssignmentService
 from lta.domain.scheduler.notification_pulisher import Notification
 from lta.domain.scheduler.notification_service import NotificationService
@@ -130,12 +131,15 @@ async def put_assignment_answers(
     configuration: AppConfiguration = Depends(get_configuration),
     user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> None:
-    configuration.assignment_repository.submit_assignment(
-        user_id=user.id,
-        id=assignment_id,
-        when=when,
-        answers=request.answers,
-    )
+    try:
+        configuration.assignment_repository.submit_assignment(
+            user_id=user.id,
+            id=assignment_id,
+            when=when,
+            answers=request.answers,
+        )
+    except SubmissionTooLate:
+        raise HTTPException(status_code=410)
 
 
 class DeviceRegistrationRequest(BaseModel):

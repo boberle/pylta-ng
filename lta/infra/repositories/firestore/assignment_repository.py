@@ -11,7 +11,11 @@ from google.cloud import firestore
 from pydantic import BaseModel
 
 from lta.domain.assignment import AnswerType, Assignment
-from lta.domain.assignment_repository import AssignmentNotFound, AssignmentRepository
+from lta.domain.assignment_repository import (
+    AssignmentNotFound,
+    AssignmentRepository,
+    SubmissionTooLate,
+)
 from lta.infra.repositories.firestore.utils import get_collection_count, make_filter
 
 
@@ -134,9 +138,18 @@ class FirestoreAssignmentRepository(AssignmentRepository):
         self._update(doc_ref, user_id, id, {"opened_at": firestore.ArrayUnion([when])})
 
     def submit_assignment(
-        self, user_id: str, id: str, when: datetime, answers: List[AnswerType]
+        self,
+        user_id: str,
+        id: str,
+        when: datetime,
+        answers: List[AnswerType],
     ) -> None:
         doc_ref = self._get_collection_ref(user_id).document(id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise AssignmentNotFound(user_id=user_id, assignment_id=id)
+        if when > doc.to_dict()["expired_at"]:
+            raise SubmissionTooLate(user_id=user_id, assignment_id=id)
         self._update(
             doc_ref,
             user_id,
