@@ -30,7 +30,11 @@ class UserRepository(Protocol):
 
     @abstractmethod
     def create_user(
-        self, id: str, email_address: EmailStr, created_at: datetime
+        self,
+        id: str,
+        email_address: EmailStr,
+        created_at: datetime,
+        notification_email: EmailStr | None = None,
     ) -> None: ...
 
     @abstractmethod

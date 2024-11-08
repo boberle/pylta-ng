@@ -67,13 +67,18 @@ class FirestoreUserRepository(UserRepository):
         )
 
     def create_user(
-        self, id: str, email_address: EmailStr, created_at: datetime
+        self,
+        id: str,
+        email_address: EmailStr,
+        created_at: datetime,
+        notification_email: EmailStr | None = None,
     ) -> None:
         user = StoredUser(
             id=id,
             email_address=email_address,
             created_at=created_at,
             devices=[],
+            notification_email=notification_email,
         )
         self.client.collection(self.collection_name).document(id).set(user.model_dump())
 

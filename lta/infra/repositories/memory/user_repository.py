@@ -46,12 +46,17 @@ class InMemoryUserRepository(UserRepository):
         )
 
     def create_user(
-        self, id: str, email_address: EmailStr, created_at: datetime
+        self,
+        id: str,
+        email_address: EmailStr,
+        created_at: datetime,
+        notification_email: EmailStr | None = None,
     ) -> None:
         user = User(
             id=id,
             email_address=email_address,
             created_at=created_at,
+            notification_email=notification_email,
         )
         self.users[id] = user
 
