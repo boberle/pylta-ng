@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime, timezone
 from pprint import pprint
 
@@ -93,6 +94,24 @@ def send_test_email_notification(
             title="Test Email Notification",
             message="This is a test email notification.",
         ),
+    )
+
+
+@app.command()
+def create_user(
+    id: str | None = Option(None),
+    email_address: str = Option(...),
+    notification_email: str | None = Option(None),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    user_repository = get_user_repository()
+    if id is None:
+        id = str(uuid.uuid4())
+    user_repository.create_user(
+        id,
+        email_address,
+        datetime.now(tz=timezone.utc),
+        notification_email=notification_email,
     )
 
 
