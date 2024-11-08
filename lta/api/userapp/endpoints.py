@@ -94,7 +94,32 @@ class AssignmentResponse(BaseModel):
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
 
 
-@router.get("/assignments/{assignment_id}/")
+@router.get("/assignments/{user_id}/{assignment_id}/")
+async def get_assignment_with_user_id(
+    assignment_id: str,
+    user_id: str,
+    configuration: AppConfiguration = Depends(get_configuration),
+) -> AssignmentResponse:
+    assignment = configuration.assignment_repository.get_assignment(
+        user_id, assignment_id
+    )
+    survey = configuration.survey_repository.get_survey(assignment.survey_id)
+
+    configuration.assignment_repository.open_assignment(
+        user_id=user_id,
+        id=assignment_id,
+        when=datetime.now(tz=timezone.utc),
+    )
+
+    return AssignmentResponse(
+        id=assignment.id,
+        welcome_message=survey.welcome_message,
+        submit_message=survey.submit_message,
+        questions=survey.questions,
+    )
+
+
+@router.get("/assignments/{user_id}/{assignment_id}/")
 async def get_assignment(
     assignment_id: str,
     configuration: AppConfiguration = Depends(get_configuration),
@@ -121,6 +146,25 @@ async def get_assignment(
 
 class SubmitAssignmentAnswersRequest(BaseModel):
     answers: list[AnswerType]
+
+
+@router.put("/assignments/{user_id}/{assignment_id}/")
+async def put_assignment_answers_with_userid(
+    request: SubmitAssignmentAnswersRequest,
+    assignment_id: str,
+    user_id: str,
+    when: datetime = Query(default_factory=lambda: datetime.now(timezone.utc)),
+    configuration: AppConfiguration = Depends(get_configuration),
+) -> None:
+    try:
+        configuration.assignment_repository.submit_assignment(
+            user_id=user_id,
+            id=assignment_id,
+            when=when,
+            answers=request.answers,
+        )
+    except SubmissionTooLate:
+        raise HTTPException(status_code=410)
 
 
 @router.put("/assignments/{assignment_id}/")
