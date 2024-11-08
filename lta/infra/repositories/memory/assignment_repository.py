@@ -73,7 +73,7 @@ class InMemoryAssignmentRepository(AssignmentRepository):
     def submit_assignment(
         self,
         user_id: str,
-        assignment_id: str,
+        id: str,
         when: datetime,
         answers: List[AnswerType],
     ) -> None:
