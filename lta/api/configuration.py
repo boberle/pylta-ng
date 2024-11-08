@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
     ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE: int = 20
     SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES: int = 30
+    ASSIGNMENT_EXPIRATION_DELAY_HOURS: int = 24
     CLOUD_TASKS_SERVICE_ACCOUNT_ID: EmailStr = (
         "tasks@dummy-project.iam.gserviceaccount.com"
     )
@@ -109,6 +110,9 @@ class AppConfiguration:
     def assignment_repository(self) -> AssignmentRepository:
         return FirestoreAssignmentRepository(
             client=get_firestore_client(),
+            expiration_delay=timedelta(
+                hours=get_settings().ASSIGNMENT_EXPIRATION_DELAY_HOURS
+            ),
         )
 
     @cached_property
