@@ -7,6 +7,7 @@ from typer import Option, Typer
 
 from lta.api.configuration import (
     Environment,
+    get_assignment_service,
     get_email_notification_publisher,
     get_firebase_app,
     get_scheduler_service,
@@ -94,6 +95,19 @@ def send_test_email_notification(
             title="Test Email Notification",
             message="This is a test email notification.",
         ),
+    )
+
+
+@app.command()
+def schedule_assignment(
+    user_id: str = Option(...),
+    survey_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    assignment_service = get_assignment_service()
+    ref_time = datetime.now(tz=timezone.utc)
+    assignment_service.create_assignment(
+        user_id=user_id, survey_id=survey_id, ref_time=ref_time
     )
 
 
