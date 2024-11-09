@@ -14,6 +14,6 @@ class PushNotificationPublisher(Protocol):
     def publish(self, device_token: str, notification: Notification) -> None: ...
 
 
-class EmailNotificationPublisher(PushNotificationPublisher):
+class EmailNotificationPublisher(Protocol):
     @abstractmethod
     def publish(self, recipient_email: str, notification: Notification) -> None: ...
