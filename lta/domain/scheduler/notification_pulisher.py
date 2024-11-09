@@ -17,3 +17,10 @@ class PushNotificationPublisher(Protocol):
 class EmailNotificationPublisher(Protocol):
     @abstractmethod
     def publish(self, recipient_email: str, notification: Notification) -> None: ...
+
+
+class SMSNotificationPublisher(Protocol):
+    @abstractmethod
+    def publish(
+        self, recipient_phone_number: str, notification: Notification
+    ) -> None: ...
