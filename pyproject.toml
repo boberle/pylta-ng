@@ -12,6 +12,7 @@ files = [
 [[tool.mypy.overrides]]
 module = [
     'firebase_admin.*',
-    'google.*'
+    'google.*',
+    'vonage'
 ]
 ignore_missing_imports = true
