@@ -34,7 +34,6 @@ from lta.domain.scheduler.notification_service import (
 from lta.domain.scheduler.scheduler_service import (
     BasicSchedulerService,
     SchedulerService,
-    TestSchedulerService,
 )
 from lta.domain.survey_repository import SurveyRepository
 from lta.domain.user_repository import UserRepository
@@ -246,28 +245,6 @@ class AppConfiguration:
             group_repository=self.group_repository,
         )
 
-    @cached_property
-    def test_scheduler_service(self) -> SchedulerService:
-        return TestSchedulerService(
-            assignment_scheduler=CloudTasksAssignmentScheduler(
-                tasks_api=CloudTasksAPI(
-                    client=tasks_v2.CloudTasksClient(),
-                    url=HttpUrl(
-                        urljoin(
-                            str(get_settings().SCHEDULER_SERVICE_BASE_URL),
-                            "schedule-assignment/?test=true",
-                        )
-                    ),
-                    project_id=get_settings().PROJECT_NAME,
-                    location=get_settings().PROJECT_LOCATION,
-                    queue_name=get_settings().SCHEDULE_ASSIGNMENTS_TASKS_QUEUE_NAME,
-                    service_account_email=get_settings().CLOUD_TASKS_SERVICE_ACCOUNT_ID,
-                ),
-            ),
-            test_user_id="test",
-            test_survey_id="test",
-        )
-
 
 __settings: Settings | None = None
 __configuration: AppConfiguration | None = None
@@ -346,10 +323,6 @@ def get_allowed_origins() -> list[str]:
 
 def get_scheduler_service() -> SchedulerService:
     return get_configuration().scheduler_service
-
-
-def get_test_scheduler_service() -> SchedulerService:
-    return get_configuration().test_scheduler_service
 
 
 def get_assignment_service() -> AssignmentService:

@@ -1,5 +1,5 @@
 import urllib.request
-from datetime import date, time
+from datetime import time
 from typing import Any, Generator
 
 import pytest
@@ -9,7 +9,7 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
-from lta.domain.schedule import Schedule, TimeRange
+from lta.domain.schedule import Day, Schedule, TimeRange
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.infra.repositories.firestore.schedule_repository import (
     FirestoreScheduleRepository,
@@ -24,24 +24,29 @@ def prefilled_memory_schedule_repository() -> InMemoryScheduleRepository:
             "schedule1": Schedule(
                 id="1",
                 survey_id="survey1",
-                start_date=date(2023, 1, 1),
-                end_date=date(2023, 1, 7),
-                time_ranges=[
-                    TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
-                    TimeRange(start_time=time(14, 0, 0), end_time=time(15, 0, 0)),
-                ],
+                active=True,
+                days=[Day.MONDAY],
+                time_range=TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
                 group_ids=["group1"],
+                same_time_for_all_users=True,
             ),
             "schedule2": Schedule(
                 id="2",
-                survey_id="survey2",
-                start_date=date(2023, 2, 1),
-                end_date=date(2023, 2, 7),
-                time_ranges=[
-                    TimeRange(start_time=time(10, 0, 0), end_time=time(11, 0, 0)),
-                    TimeRange(start_time=time(15, 0, 0), end_time=time(16, 0, 0)),
-                ],
-                group_ids=["user2"],
+                survey_id="survey1",
+                active=True,
+                days=[Day.MONDAY],
+                time_range=TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
+                group_ids=["group1"],
+                same_time_for_all_users=False,
+            ),
+            "schedule3": Schedule(
+                id="3",
+                survey_id="survey1",
+                active=False,
+                days=[Day.THURSDAY],
+                time_range=TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
+                group_ids=["group1"],
+                same_time_for_all_users=False,
             ),
         }
     )

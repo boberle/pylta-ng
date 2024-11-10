@@ -1,11 +1,10 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from datetime import date
 from typing import Protocol
 
 from pydantic import BaseModel, Field
 
-from lta.domain.schedule import Schedule, TimeRange
+from lta.domain.schedule import Day, Schedule, TimeRange
 
 
 @dataclass
@@ -15,11 +14,12 @@ class ScheduleNotFound(Exception):
 
 class ScheduleCreation(BaseModel):
     survey_id: str
-    start_date: date
-    end_date: date
-    time_ranges: list[TimeRange]
+    active: bool
+    days: list[Day] = Field(default_factory=list)
+    time_range: TimeRange
     user_ids: list[str] = Field(default_factory=list)
     group_ids: list[str] = Field(default_factory=list)
+    same_time_for_all_users: bool = False
 
 
 class ScheduleRepository(Protocol):
@@ -36,4 +36,4 @@ class ScheduleRepository(Protocol):
     def list_schedules(self) -> list[Schedule]: ...
 
     @abstractmethod
-    def list_active_schedules(self, ref_date: date) -> list[Schedule]: ...
+    def list_active_schedules(self) -> list[Schedule]: ...

@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -7,7 +7,6 @@ from lta.api.configuration import (
     get_assignment_service,
     get_notification_service,
     get_scheduler_service,
-    get_test_scheduler_service,
 )
 from lta.domain.scheduler.assignment_service import AssignmentService
 from lta.domain.scheduler.notification_service import (
@@ -23,21 +22,12 @@ router = APIRouter()
 
 @router.get("/schedule-assignments/")
 def schedule_assignments(
-    ref_date: date = Query(
-        default_factory=lambda: (
-            datetime.now(tz=timezone.utc) + timedelta(days=1)
-        ).date(),
+    ref_time: datetime = Query(
+        default_factory=lambda: (datetime.now(tz=timezone.utc) + timedelta(days=2)),
     ),
-    test: bool = False,
     scheduler_service: SchedulerService = Depends(get_scheduler_service),
-    test_scheduler_service: SchedulerService = Depends(get_test_scheduler_service),
 ) -> None:
-    if test:
-        service = test_scheduler_service
-    else:
-        service = scheduler_service
-
-    service.schedule_assignments_for_date(ref_date=ref_date)
+    scheduler_service.schedule_assignments(ref_time=ref_time)
 
 
 class ScheduleAssignmentRequest(BaseModel):

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from datetime import date
 
 from lta.domain.schedule import Schedule
 from lta.domain.schedule_repository import (
@@ -22,12 +21,13 @@ class InMemoryScheduleRepository(ScheduleRepository):
     def create_schedule(self, id: str, schedule: ScheduleCreation) -> None:
         self.schedules[id] = Schedule(
             id=id,
+            active=schedule.active,
             survey_id=schedule.survey_id,
-            start_date=schedule.start_date,
-            end_date=schedule.end_date,
-            time_ranges=schedule.time_ranges,
+            days=schedule.days,
+            time_range=schedule.time_range,
             user_ids=schedule.user_ids,
             group_ids=schedule.group_ids,
+            same_time_for_all_users=schedule.same_time_for_all_users,
         )
 
     def delete_schedule(self, id: str) -> None:
@@ -35,19 +35,7 @@ class InMemoryScheduleRepository(ScheduleRepository):
             del self.schedules[id]
 
     def list_schedules(self) -> list[Schedule]:
-        return sorted(
-            self.schedules.values(),
-            key=lambda schedule: schedule.start_date,
-            reverse=True,
-        )
+        return list(self.schedules.values())
 
-    def list_active_schedules(self, ref_date: date) -> list[Schedule]:
-        return sorted(
-            [
-                schedule
-                for schedule in self.schedules.values()
-                if schedule.start_date <= ref_date <= schedule.end_date
-            ],
-            key=lambda schedule: schedule.start_date,
-            reverse=True,
-        )
+    def list_active_schedules(self) -> list[Schedule]:
+        return [schedule for schedule in self.schedules.values() if schedule.active]

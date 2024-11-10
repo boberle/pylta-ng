@@ -1,38 +1,64 @@
+import logging
 import random
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta, timezone
-from typing import Generator, Protocol
+from datetime import date, datetime, timedelta, timezone
+from typing import Generator, Optional, Protocol
 
 from lta.domain.group_repository import GroupRepository
+from lta.domain.schedule import Day, Schedule, TimeRange
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
 
 
 class SchedulerService(Protocol):
     @abstractmethod
-    def schedule_assignments_for_date(self, ref_date: date) -> None: ...
+    def schedule_assignments(self, ref_time: datetime) -> None: ...
 
 
 @dataclass
-class BasicSchedulerService:
+class BasicSchedulerService(SchedulerService):
     assignment_scheduler: AssignmentScheduler
     schedule_repository: ScheduleRepository
     group_repository: GroupRepository
     rand: random.Random = field(default_factory=random.Random)
 
-    def schedule_assignments_for_date(self, ref_date: date) -> None:
-        schedules = self.schedule_repository.list_active_schedules(ref_date=ref_date)
+    def schedule_assignments(self, ref_time: datetime) -> None:
+        schedules = self.schedule_repository.list_active_schedules()
         for schedule in schedules:
-            for time_range in schedule.time_ranges:
-                start = convert_time_to_int(time_range.start_time)
-                end = convert_time_to_int(time_range.end_time)
-                for user_id in self._generate_user_ids(
-                    schedule.user_ids, schedule.group_ids
-                ):
-                    t = convert_int_to_time(self.rand.randint(start, end))
-                    dt = datetime.combine(ref_date, t, tzinfo=timezone.utc)
-                    self._schedule_assignment(user_id, schedule.survey_id, dt)
+            self.schedule_assignment(schedule, ref_time)
+
+    def schedule_assignment(self, schedule: Schedule, ref_time: datetime) -> None:
+        if schedule.same_time_for_all_users:
+            when = self._get_random_datetime(schedule, ref_time)
+            if when is None:
+                return
+            for user_id in self._generate_user_ids(
+                schedule.user_ids, schedule.group_ids
+            ):
+                self._schedule_assignment(user_id, schedule.survey_id, when)
+
+        else:
+            for user_id in self._generate_user_ids(
+                schedule.user_ids, schedule.group_ids
+            ):
+                when = self._get_random_datetime(schedule, ref_time)
+                if when is None:
+                    continue
+                self._schedule_assignment(user_id, schedule.survey_id, when)
+
+    def _get_random_datetime(
+        self, schedule: Schedule, ref_time: datetime
+    ) -> datetime | None:
+        rv = get_random_datetime(
+            ref_time=ref_time,
+            days=schedule.days,
+            time_range=schedule.time_range,
+            rand=self.rand,
+        )
+        if rv is None:
+            logging.warning(f"No valid time range found for schedule {schedule.id}")
+        return rv
 
     def _schedule_assignment(
         self, user_id: str, survey_id: str, when: datetime
@@ -54,22 +80,68 @@ class BasicSchedulerService:
 
 
 @dataclass
-class TestSchedulerService:
-    assignment_scheduler: AssignmentScheduler
-    test_user_id: str
-    test_survey_id: str
-
-    def schedule_assignments_for_date(self, ref_date: date) -> None:
-        self.assignment_scheduler.schedule_assignment(
-            user_id=self.test_user_id,
-            survey_id=self.test_survey_id,
-            when=datetime.now(tz=timezone.utc) + timedelta(minutes=1),
-        )
+class DatetimeRange:
+    start: datetime
+    end: datetime
 
 
-def convert_time_to_int(t: time) -> int:
-    return t.hour * 3600 + t.minute * 60 + t.second
+def get_random_datetime(
+    ref_time: datetime, days: list[Day], time_range: TimeRange, rand: random.Random
+) -> Optional[datetime]:
+    dates: list[date] = get_dates_from_days(ref_time, days)
+    ranges: list[DatetimeRange] = get_datetime_ranges_from_dates_and_time_range(
+        dates, time_range
+    )
+    ranges = keep_ranges_after_ref_time(ref_time, ranges)
+
+    if not ranges:
+        return None
+
+    range_: DatetimeRange = rand.choice(ranges)
+    start = int(range_.start.timestamp())
+    end = int(range_.end.timestamp())
+    t = rand.randint(start, end)
+    return datetime.fromtimestamp(t, tz=range_.start.tzinfo)
 
 
-def convert_int_to_time(i: int) -> time:
-    return time(i // 3600, (i % 3600) // 60, i % 60)
+def get_dates_from_days(ref_time: datetime, days: list[Day]) -> list[date]:
+    monday = get_previous_monday(ref_time)
+    offsets = {
+        Day.MONDAY: 0,
+        Day.TUESDAY: 1,
+        Day.WEDNESDAY: 2,
+        Day.THURSDAY: 3,
+        Day.FRIDAY: 4,
+        Day.SATURDAY: 5,
+        Day.SUNDAY: 6,
+    }
+    return [monday + timedelta(days=offsets[day]) for day in days]
+
+
+def get_previous_monday(ref_time: datetime) -> date:
+    days_since_monday = ref_time.weekday()
+    monday = (ref_time - timedelta(days=days_since_monday)).date()
+    return monday
+
+
+def get_datetime_ranges_from_dates_and_time_range(
+    dates: list[date], time_range: TimeRange
+) -> list[DatetimeRange]:
+    rv: list[DatetimeRange] = []
+    for date_ in dates:
+        start = datetime.combine(date_, time_range.start_time, tzinfo=timezone.utc)
+        end = datetime.combine(date_, time_range.end_time, tzinfo=timezone.utc)
+        rv.append(DatetimeRange(start, end))
+    return rv
+
+
+def keep_ranges_after_ref_time(
+    ref_time: datetime, ranges: list[DatetimeRange]
+) -> list[DatetimeRange]:
+    rv: list[DatetimeRange] = []
+    for range_ in ranges:
+        if range_.start >= ref_time:
+            rv.append(range_)
+        elif range_.end >= ref_time:
+            rv.append(DatetimeRange(ref_time, range_.end))
+    return rv

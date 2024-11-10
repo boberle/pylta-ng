@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pprint import pprint
 
 import firebase_admin.auth
@@ -60,20 +60,16 @@ def get_claims(
     pprint(custom_claims)
 
 
-def date_parser(value: str) -> date:
-    return datetime.strptime(value, "%Y-%m-%d").date()
-
-
 @app.command()
 def schedule_assignments(
-    ref_date: date = Option(
-        datetime.now(tz=timezone.utc).date().strftime("%Y-%m-%d"), parser=date_parser
+    ref_time: datetime = Option(
+        datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
     ),
 ) -> None:
     """Schedule assignments for the ref date"""
     set_environment(Environment.LOCAL_PROD)
     service = get_scheduler_service()
-    service.schedule_assignments_for_date(ref_date=ref_date)
+    service.schedule_assignments(ref_time=ref_time)
 
 
 @app.command()
