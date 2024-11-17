@@ -82,7 +82,7 @@ class NotificationService:
             return False
 
         survey = self.survey_repository.get_survey(assignment.survey_id)
-        survey_notification_info = survey.notification_info
+        survey_notification_info = survey.notifications
         if survey_notification_info is None:
             return False
 

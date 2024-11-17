@@ -26,7 +26,7 @@ class SurveyCreation(BaseModel):
     welcome_message: str
     submit_message: str
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
-    notification_info: SurveyNotificationInfo = Field(
+    notifications: SurveyNotificationInfo = Field(
         default_factory=SurveyNotificationInfo
     )
 

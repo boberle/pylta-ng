@@ -29,7 +29,7 @@ def sample_survey_1() -> Survey:
         title="Sample first survey!",
         welcome_message="Welcome to our survey!",
         submit_message="Thank you for your participation!",
-        notification_info=SurveyNotificationInfo(
+        notifications=SurveyNotificationInfo(
             email_notification=NotificationSet(
                 initial_notification=NotificationMessage(
                     title="Hey", message="Initial email notification!"
@@ -74,7 +74,7 @@ def sample_survey_2() -> Survey:
         title="Sample second survey!",
         welcome_message="Welcome to our second survey!",
         submit_message="Thank you for your participation!",
-        notification_info=SurveyNotificationInfo(
+        notifications=SurveyNotificationInfo(
             email_notification=NotificationSet(
                 initial_notification=NotificationMessage(
                     title="Hey", message="Initial email notification!"

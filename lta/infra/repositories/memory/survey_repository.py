@@ -28,7 +28,7 @@ class InMemorySurveyRepository(SurveyRepository):
             welcome_message=survey.welcome_message,
             submit_message=survey.submit_message,
             questions=survey.questions,
-            notification_info=survey.notification_info,
+            notifications=survey.notifications,
         )
         self.surveys[stored_survey.id] = stored_survey
 

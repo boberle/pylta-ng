@@ -62,7 +62,7 @@ def test_send_notification(
             user_id=sample_user_1.id,
             assignment_id=sample_assignment_1.id,
             user_notification_info=sample_user_1.notification_info,
-            survey_notification_info=sample_survey_1.notification_info,
+            survey_notification_info=sample_survey_1.notifications,
             notification_type=NotificationType.INITIAL,
         )
     ]
@@ -90,7 +90,7 @@ def test_send_notification__multiple_publishers(
                 user_id=sample_user_1.id,
                 assignment_id=sample_assignment_1.id,
                 user_notification_info=sample_user_1.notification_info,
-                survey_notification_info=sample_survey_1.notification_info,
+                survey_notification_info=sample_survey_1.notifications,
                 notification_type=NotificationType.INITIAL,
             )
         ]
@@ -135,7 +135,7 @@ def test_notify_user(
             user_id=sample_user_1.id,
             assignment_id=sample_assignment_1.id,
             user_notification_info=sample_user_1.notification_info,
-            survey_notification_info=sample_survey_1.notification_info,
+            survey_notification_info=sample_survey_1.notifications,
             notification_type=NotificationType.INITIAL,
         )
     ]

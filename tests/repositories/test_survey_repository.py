@@ -31,7 +31,7 @@ def test_get_survey__with_all_properties(
             ),
             OpenEndedQuestion(message="Tell us about your favorite color."),
         ],
-        notification_info=SurveyNotificationInfo(
+        notifications=SurveyNotificationInfo(
             email_notification=NotificationSet(
                 initial_notification=NotificationMessage(
                     title="Initial Email",

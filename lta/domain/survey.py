@@ -43,7 +43,7 @@ class Survey(BaseModel):
     welcome_message: str
     submit_message: str
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
-    notification_info: SurveyNotificationInfo = Field(
+    notifications: SurveyNotificationInfo = Field(
         default_factory=SurveyNotificationInfo
     )
 
@@ -68,7 +68,7 @@ def get_test_survey() -> Survey:
                 max_length=25,
             ),
         ],
-        notification_info=SurveyNotificationInfo(
+        notifications=SurveyNotificationInfo(
             email_notification=NotificationSet(
                 initial_notification=NotificationMessage(
                     title="Test Survey",
