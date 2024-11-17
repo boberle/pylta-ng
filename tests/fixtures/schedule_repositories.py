@@ -36,7 +36,7 @@ def prefilled_memory_schedule_repository() -> InMemoryScheduleRepository:
                 active=True,
                 days=[Day.MONDAY],
                 time_range=TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
-                group_ids=["group1"],
+                user_ids=["user1"],
                 same_time_for_all_users=False,
             ),
             "schedule3": Schedule(
@@ -45,7 +45,7 @@ def prefilled_memory_schedule_repository() -> InMemoryScheduleRepository:
                 active=False,
                 days=[Day.THURSDAY],
                 time_range=TimeRange(start_time=time(9, 0, 0), end_time=time(10, 0, 0)),
-                group_ids=["group1"],
+                user_ids=["user2"],
                 same_time_for_all_users=False,
             ),
         }

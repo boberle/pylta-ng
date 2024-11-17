@@ -1,8 +1,6 @@
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import Random
-from typing import Protocol
 
 from lta.domain.assignment_repository import AssignmentRepository
 from lta.domain.scheduler.notification_scheduler import NotificationScheduler
@@ -10,19 +8,12 @@ from lta.domain.survey_repository import SurveyRepository
 from lta.utils import make_uuid4
 
 
-class AssignmentService(Protocol):
-    @abstractmethod
-    def create_assignment(
-        self, user_id: str, survey_id: str, ref_time: datetime
-    ) -> None: ...
-
-
 @dataclass
-class BasicAssignmentService:
+class AssignmentService:
     notification_scheduler: NotificationScheduler
     assignment_repository: AssignmentRepository
     survey_repository: SurveyRepository
-    soon_to_expire_notification_delay: timedelta
+    reminder_notification_delay: timedelta
     rand: Random = field(default_factory=Random)
 
     def create_assignment(
@@ -42,16 +33,12 @@ class BasicAssignmentService:
         self.notification_scheduler.schedule_initial_notification(
             user_id=user_id,
             assignment_id=assignment_id,
-            notification_title=survey.publish_notification.title,
-            notification_message=survey.publish_notification.message,
             when=first_notification_time,
         )
 
-        second_notification_time = ref_time + self.soon_to_expire_notification_delay
+        second_notification_time = ref_time + self.reminder_notification_delay
         self.notification_scheduler.schedule_reminder_notification(
             user_id=user_id,
             assignment_id=assignment_id,
-            notification_title=survey.soon_to_expire_notification.title,
-            notification_message=survey.soon_to_expire_notification.message,
             when=second_notification_time,
         )

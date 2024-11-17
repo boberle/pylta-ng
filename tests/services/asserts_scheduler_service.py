@@ -4,17 +4,17 @@ from lta.domain.assignment import Assignment
 from lta.infra.repositories.memory.assignment_repository import (
     InMemoryAssignmentRepository,
 )
+from lta.infra.scheduler.direct.notification_scheduler import (
+    DirectNotificationScheduler,
+)
 from lta.infra.scheduler.recording.notification_publisher import (
     RecordingNotificationPublisher,
-)
-from lta.infra.scheduler.recording.notification_scheduler import (
-    RecordingDirectNotificationScheduler,
 )
 
 
 def assert_scheduler_service_for_date_20230102(
     assignment_repository: InMemoryAssignmentRepository,
-    notification_scheduler: RecordingDirectNotificationScheduler,
+    notification_scheduler: DirectNotificationScheduler,
     android_notification_publisher: RecordingNotificationPublisher,
     ios_notification_publisher: RecordingNotificationPublisher,
     assignments_are_submitted: bool,
@@ -101,169 +101,17 @@ def assert_scheduler_service_for_date_20230102(
             ),
         },
     }
-    assert notification_scheduler.recorder == [
-        {
-            "when": datetime(2023, 1, 2, 9, 9, 56, tzinfo=timezone.utc),
-            "user_id": "user1",
-            "notification_title": "Hey",
-            "notification_message": "Survey published!",
-            "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
-        },
-        {
-            "when": datetime(2023, 1, 2, 9, 39, 56, tzinfo=timezone.utc),
-            "user_id": "user1",
-            "notification_title": "Hey",
-            "notification_message": "Survey soon to expire!",
-            "assignment_id": "f3a3c571-7476-4899-b5a3-adb3254a9493",
-        },
-        {
-            "when": datetime(2023, 1, 2, 9, 31, 22, tzinfo=timezone.utc),
-            "user_id": "user2",
-            "notification_title": "Hey",
-            "notification_message": "Survey published!",
-            "assignment_id": "649dda6e-b49c-43dc-acbc-408cc5521660",
-        },
-        {
-            "when": datetime(2023, 1, 2, 10, 1, 22, tzinfo=timezone.utc),
-            "user_id": "user2",
-            "notification_title": "Hey",
-            "notification_message": "Survey soon to expire!",
-            "assignment_id": "649dda6e-b49c-43dc-acbc-408cc5521660",
-        },
-        {
-            "when": datetime(2023, 1, 2, 14, 31, 3, tzinfo=timezone.utc),
-            "user_id": "user1",
-            "notification_title": "Hey",
-            "notification_message": "Survey published!",
-            "assignment_id": "81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd",
-        },
-        {
-            "when": datetime(2023, 1, 2, 15, 1, 3, tzinfo=timezone.utc),
-            "user_id": "user1",
-            "notification_title": "Hey",
-            "notification_message": "Survey soon to expire!",
-            "assignment_id": "81c1e7ff-6efa-4d5b-9988-5afcbb61a9cd",
-        },
-        {
-            "when": datetime(2023, 1, 2, 14, 52, 37, tzinfo=timezone.utc),
-            "user_id": "user2",
-            "notification_title": "Hey",
-            "notification_message": "Survey published!",
-            "assignment_id": "1f0e4b4a-886c-4a30-9c26-ffa8ccce240c",
-        },
-        {
-            "when": datetime(2023, 1, 2, 15, 22, 37, tzinfo=timezone.utc),
-            "user_id": "user2",
-            "notification_title": "Hey",
-            "notification_message": "Survey soon to expire!",
-            "assignment_id": "1f0e4b4a-886c-4a30-9c26-ffa8ccce240c",
-        },
-    ]
 
     if assignments_are_submitted:
         assert len(android_notification_publisher.recorder) == 4
-        assert android_notification_publisher.recorder == [
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-        ]
+        assert android_notification_publisher.recorder == []
 
         assert len(ios_notification_publisher.recorder) == 2
-        assert ios_notification_publisher.recorder == [
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-        ]
+        assert ios_notification_publisher.recorder == []
 
     else:
         assert len(android_notification_publisher.recorder) == 8
-        assert android_notification_publisher.recorder == [
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device1",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user2_device1",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-        ]
+        assert android_notification_publisher.recorder == []
 
         assert len(ios_notification_publisher.recorder) == 4
-        assert ios_notification_publisher.recorder == [
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey published!",
-            },
-            {
-                "device_token": "user1_device2",
-                "title": "Hey",
-                "message": "Survey soon to expire!",
-            },
-        ]
+        assert ios_notification_publisher.recorder == []

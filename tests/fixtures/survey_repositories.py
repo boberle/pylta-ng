@@ -11,9 +11,11 @@ from lta.api.configuration import (
 from lta.domain.survey import (
     MultipleChoiceQuestion,
     NotificationMessage,
+    NotificationSet,
     OpenEndedQuestion,
     SingleChoiceQuestion,
     Survey,
+    SurveyNotificationInfo,
 )
 from lta.domain.survey_repository import SurveyRepository
 from lta.infra.repositories.firestore.survey_repository import FirestoreSurveyRepository
@@ -21,77 +23,106 @@ from lta.infra.repositories.memory.survey_repository import InMemorySurveyReposi
 
 
 @pytest.fixture()
-def prefilled_memory_survey_repository() -> InMemorySurveyRepository:
+def sample_survey_1() -> Survey:
+    return Survey(
+        id="survey1",
+        title="Sample first survey!",
+        welcome_message="Welcome to our survey!",
+        submit_message="Thank you for your participation!",
+        notification_info=SurveyNotificationInfo(
+            email_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="Hey", message="Initial email notification!"
+                ),
+                reminder_notification=NotificationMessage(
+                    title="Hey", message="Reminder email notification!"
+                ),
+            ),
+            sms_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="", message="Initial SMS notification!"
+                ),
+                reminder_notification=NotificationMessage(
+                    title="", message="Reminder SMS notification!"
+                ),
+            ),
+        ),
+        questions=[
+            SingleChoiceQuestion(
+                message="What is your favorite color?",
+                choices=["Red", "Blue", "Green", "Yellow"],
+            ),
+            SingleChoiceQuestion(
+                message="What is your favorite music genre?",
+                choices=["Rock", "Pop", "Hip-hop", "Jazz"],
+            ),
+            MultipleChoiceQuestion(
+                message="What are your favorite fruits?",
+                choices=["Apple", "Banana", "Orange", "Pineapple"],
+            ),
+            OpenEndedQuestion(
+                message="Tell us about your travel experiences.",
+            ),
+        ],
+    )
+
+
+@pytest.fixture()
+def sample_survey_2() -> Survey:
+    return Survey(
+        id="survey2",
+        title="Sample second survey!",
+        welcome_message="Welcome to our second survey!",
+        submit_message="Thank you for your participation!",
+        notification_info=SurveyNotificationInfo(
+            email_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="Hey", message="Initial email notification!"
+                ),
+                reminder_notification=NotificationMessage(
+                    title="Hey", message="Reminder email notification!"
+                ),
+            )
+        ),
+        questions=[
+            SingleChoiceQuestion(
+                message="What is your favorite animal?",
+                choices=["Dog", "Cat", "Bird", "Fish"],
+            ),
+            MultipleChoiceQuestion(
+                message="What are your favorite books?",
+                choices=[
+                    "To Kill a Mockingbird",
+                    "1984",
+                    "Pride and Prejudice",
+                    "The Great Gatsby",
+                ],
+            ),
+            MultipleChoiceQuestion(
+                message="What are your favorite movies?",
+                choices=[
+                    "The Shawshank Redemption",
+                    "The Godfather",
+                    "Pulp Fiction",
+                    "The Dark Knight",
+                ],
+            ),
+            OpenEndedQuestion(
+                message="Tell us about your favorite movies.",
+            ),
+        ],
+    )
+
+
+@pytest.fixture()
+def prefilled_memory_survey_repository(
+    sample_survey_1: Survey,
+    sample_survey_2: Survey,
+) -> InMemorySurveyRepository:
     return InMemorySurveyRepository(
         {
-            "survey1": Survey(
-                id="survey1",
-                title="Sample first survey!",
-                welcome_message="Welcome to our survey!",
-                submit_message="Thank you for your participation!",
-                publish_notification=NotificationMessage(
-                    title="Hey", message="Survey published!"
-                ),
-                soon_to_expire_notification=NotificationMessage(
-                    title="Hey", message="Survey soon to expire!"
-                ),
-                questions=[
-                    SingleChoiceQuestion(
-                        message="What is your favorite color?",
-                        choices=["Red", "Blue", "Green", "Yellow"],
-                    ),
-                    SingleChoiceQuestion(
-                        message="What is your favorite music genre?",
-                        choices=["Rock", "Pop", "Hip-hop", "Jazz"],
-                    ),
-                    MultipleChoiceQuestion(
-                        message="What are your favorite fruits?",
-                        choices=["Apple", "Banana", "Orange", "Pineapple"],
-                    ),
-                    OpenEndedQuestion(
-                        message="Tell us about your travel experiences.",
-                    ),
-                ],
-            ),
-            "survey2": Survey(
-                id="survey2",
-                title="Sample second survey!",
-                welcome_message="Welcome to our second survey!",
-                submit_message="Thank you for your participation!",
-                publish_notification=NotificationMessage(
-                    title="Hi", message="A second survey is published!"
-                ),
-                soon_to_expire_notification=NotificationMessage(
-                    title="Hi", message="The second survey is soon to expire!"
-                ),
-                questions=[
-                    SingleChoiceQuestion(
-                        message="What is your favorite animal?",
-                        choices=["Dog", "Cat", "Bird", "Fish"],
-                    ),
-                    MultipleChoiceQuestion(
-                        message="What are your favorite books?",
-                        choices=[
-                            "To Kill a Mockingbird",
-                            "1984",
-                            "Pride and Prejudice",
-                            "The Great Gatsby",
-                        ],
-                    ),
-                    MultipleChoiceQuestion(
-                        message="What are your favorite movies?",
-                        choices=[
-                            "The Shawshank Redemption",
-                            "The Godfather",
-                            "Pulp Fiction",
-                            "The Dark Knight",
-                        ],
-                    ),
-                    OpenEndedQuestion(
-                        message="Tell us about your favorite movies.",
-                    ),
-                ],
-            ),
+            "survey1": sample_survey_1,
+            "survey2": sample_survey_2,
         }
     )
 

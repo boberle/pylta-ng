@@ -35,10 +35,8 @@ class UserRepository(Protocol):
         email_address: EmailStr,
         created_at: datetime,
         notification_email: EmailStr | None = None,
+        phone_number: str | None = None,
     ) -> None: ...
 
     @abstractmethod
     def exists(self, id: str) -> bool: ...
-
-    @abstractmethod
-    def get_notification_email(self, id: str) -> str | None: ...

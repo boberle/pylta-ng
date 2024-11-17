@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lta.domain.user import Device, DeviceOS, User
+from lta.domain.user import Device, DeviceOS, User, UserNotificationInfo
 from lta.domain.user_repository import UserNotFound, UserRepository
 
 
@@ -97,15 +97,39 @@ def test_get_device_registrations_from_user_id(
 
 
 def test_get_user(empty_user_repository: UserRepository) -> None:
+    ref_time = datetime.now(tz=timezone.utc)
     empty_user_repository.create_user(
-        "user1", "user1@example.com", datetime.now(tz=timezone.utc)
+        "user1",
+        "user1@example.com",
+        ref_time,
     )
     exp = User(
         id="user1",
         email_address="user1@example.com",
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=ref_time,
     )
-    empty_user_repository.create_user(exp.id, exp.email_address, exp.created_at)
+    got = empty_user_repository.get_user(exp.id)
+    assert exp == got
+
+
+def test_get_user__with_all_properties(empty_user_repository: UserRepository) -> None:
+    ref_time = datetime.now(tz=timezone.utc)
+    empty_user_repository.create_user(
+        "user1",
+        "user1@example.com",
+        ref_time,
+        notification_email="user@idontexists.net",
+        phone_number="123",
+    )
+    exp = User(
+        id="user1",
+        email_address="user1@example.com",
+        created_at=ref_time,
+        notification_info=UserNotificationInfo(
+            email_address="user@idontexists.net",
+            phone_number="123",
+        ),
+    )
     got = empty_user_repository.get_user(exp.id)
     assert exp == got
 

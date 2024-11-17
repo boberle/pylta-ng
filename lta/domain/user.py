@@ -23,9 +23,16 @@ class Device(BaseModel):
         self.last_connection = connection_time
 
 
+class UserNotificationInfo(BaseModel):
+    phone_number: str | None = None
+    email_address: EmailStr | None = None
+
+
 class User(BaseModel):
     id: str
     email_address: EmailStr
     devices: list[Device] = Field(default_factory=list)
     created_at: datetime
-    notification_email: EmailStr | None = None
+    notification_info: UserNotificationInfo = Field(
+        default_factory=UserNotificationInfo
+    )

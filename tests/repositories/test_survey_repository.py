@@ -3,9 +3,11 @@ import pytest
 from lta.domain.survey import (
     MultipleChoiceQuestion,
     NotificationMessage,
+    NotificationSet,
     OpenEndedQuestion,
     SingleChoiceQuestion,
     Survey,
+    SurveyNotificationInfo,
 )
 from lta.domain.survey_repository import (
     SurveyCreation,
@@ -14,16 +16,14 @@ from lta.domain.survey_repository import (
 )
 
 
-def test_get_survey(empty_survey_repository: SurveyRepository) -> None:
+def test_get_survey__with_all_properties(
+    empty_survey_repository: SurveyRepository,
+) -> None:
     survey_id = "1"
     survey_creation = SurveyCreation(
         title="Test Survey",
         welcome_message="Welcome!",
         submit_message="Thank you!",
-        publish_notification=NotificationMessage(title="Hey", message="Published"),
-        soon_to_expire_notification=NotificationMessage(
-            title="Hi", message="Expiring soon"
-        ),
         questions=[
             SingleChoiceQuestion(message="Favorite color?", choices=["Red", "Blue"]),
             MultipleChoiceQuestion(
@@ -31,6 +31,26 @@ def test_get_survey(empty_survey_repository: SurveyRepository) -> None:
             ),
             OpenEndedQuestion(message="Tell us about your favorite color."),
         ],
+        notification_info=SurveyNotificationInfo(
+            email_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="Initial Email",
+                    message="This is an initial email notification.",
+                ),
+                reminder_notification=NotificationMessage(
+                    title="Reminder Email",
+                    message="This is a reminder email notification.",
+                ),
+            ),
+            sms_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="Initial SMS", message="This is an initial SMS notification."
+                ),
+                reminder_notification=NotificationMessage(
+                    title="Reminder SMS", message="This is a reminder SMS notification."
+                ),
+            ),
+        ),
     )
     empty_survey_repository.create_survey(survey_id, survey_creation)
 
@@ -53,10 +73,6 @@ def test_list_surveys(empty_survey_repository: SurveyRepository) -> None:
         title="Survey 1",
         welcome_message="Welcome 1!",
         submit_message="Thanks 1!",
-        publish_notification=NotificationMessage(title="Hey 1", message="Published 1"),
-        soon_to_expire_notification=NotificationMessage(
-            title="Hi 1", message="Expiring soon 1"
-        ),
         questions=[],
     )
     survey_id_2 = "2"
@@ -64,10 +80,6 @@ def test_list_surveys(empty_survey_repository: SurveyRepository) -> None:
         title="Survey 2",
         welcome_message="Welcome 2!",
         submit_message="Thanks 2!",
-        publish_notification=NotificationMessage(title="Hey 2", message="Published 2"),
-        soon_to_expire_notification=NotificationMessage(
-            title="Hi 2", message="Expiring soon 2"
-        ),
         questions=[],
     )
     empty_survey_repository.create_survey(survey_id_1, survey_creation_1)

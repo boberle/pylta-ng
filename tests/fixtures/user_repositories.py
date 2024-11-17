@@ -9,57 +9,84 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
-from lta.domain.user import Device, DeviceOS, User
+from lta.domain.user import Device, DeviceOS, User, UserNotificationInfo
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.firestore.user_repository import FirestoreUserRepository
 from lta.infra.repositories.memory.user_repository import InMemoryUserRepository
 
 
 @pytest.fixture()
-def prefilled_memory_user_repository() -> UserRepository:
+def sample_user_1() -> User:
+    return User(
+        id="user1",
+        email_address="user1@idontexist.net",
+        devices=[
+            Device(
+                token="user1_device1",
+                os=DeviceOS.ANDROID,
+                version="1",
+                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
+            ),
+            Device(
+                token="user1_device2",
+                os=DeviceOS.IOS,
+                version="1",
+                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
+            ),
+        ],
+        created_at=datetime(2022, 1, 1, tzinfo=timezone.utc),
+        notification_info=UserNotificationInfo(
+            phone_number="123",
+            email_address="user1@idontexist.net",
+        ),
+    )
+
+
+@pytest.fixture()
+def sample_user_2() -> User:
+    return User(
+        id="user2",
+        email_address="user2@idontexist.net",
+        devices=[
+            Device(
+                token="user2_device1",
+                os=DeviceOS.ANDROID,
+                version="1",
+                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
+            ),
+        ],
+        created_at=datetime(2022, 2, 2, tzinfo=timezone.utc),
+        notification_info=UserNotificationInfo(
+            email_address="user2@idontexist.net",
+        ),
+    )
+
+
+@pytest.fixture()
+def sample_user_3() -> User:
+    return User(
+        id="user3",
+        email_address="user3@idontexist.net",
+        devices=[],
+        created_at=datetime(2022, 3, 3, tzinfo=timezone.utc),
+        notification_info=UserNotificationInfo(),
+    )
+
+
+@pytest.fixture()
+def prefilled_memory_user_repository(
+    sample_user_1: User,
+    sample_user_2: User,
+    sample_user_3: User,
+) -> UserRepository:
     return InMemoryUserRepository(
         {
-            "user1": User(
-                id="user1",
-                email_address="user1@idontexist.net",
-                devices=[
-                    Device(
-                        token="user1_device1",
-                        os=DeviceOS.ANDROID,
-                        version="1",
-                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                        last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
-                    ),
-                    Device(
-                        token="user1_device2",
-                        os=DeviceOS.IOS,
-                        version="1",
-                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                        last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
-                    ),
-                ],
-                created_at=datetime(2022, 1, 1, tzinfo=timezone.utc),
-            ),
-            "user2": User(
-                id="user2",
-                email_address="user2@idontexist.net",
-                devices=[
-                    Device(
-                        token="user2_device1",
-                        os=DeviceOS.ANDROID,
-                        version="1",
-                        first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                        last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
-                    ),
-                ],
-                created_at=datetime(2022, 2, 2, tzinfo=timezone.utc),
-            ),
-            "user3": User(
-                id="user3",
-                email_address="user3@idontexist.net",
-                devices=[],
-                created_at=datetime(2022, 3, 3, tzinfo=timezone.utc),
-            ),
+            "user1": sample_user_1,
+            "user2": sample_user_2,
+            "user3": sample_user_3,
         }
     )
 

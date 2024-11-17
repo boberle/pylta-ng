@@ -1,21 +1,41 @@
 from dataclasses import dataclass, field
-from typing import Any
 
 from lta.domain.scheduler.notification_pulisher import (
-    Notification,
-    PushNotificationPublisher,
+    NotificationPublisher,
+    NotificationType,
 )
+from lta.domain.survey import SurveyNotificationInfo
+from lta.domain.user import UserNotificationInfo
 
 
 @dataclass
-class RecordingNotificationPublisher(PushNotificationPublisher):
-    recorder: list[dict[str, Any]] = field(default_factory=list)
+class RecordedData:
+    user_id: str
+    assignment_id: str
+    user_notification_info: UserNotificationInfo
+    survey_notification_info: SurveyNotificationInfo
+    notification_type: NotificationType
 
-    def publish(self, device_token: str, notification: Notification) -> None:
+
+@dataclass
+class RecordingNotificationPublisher(NotificationPublisher):
+    recorder: list[RecordedData] = field(default_factory=list)
+
+    def send_notification(
+        self,
+        user_id: str,
+        assignment_id: str,
+        user_notification_info: UserNotificationInfo,
+        survey_notification_info: SurveyNotificationInfo,
+        notification_type: NotificationType,
+    ) -> bool:
         self.recorder.append(
-            dict(
-                device_token=device_token,
-                title=notification.title,
-                message=notification.message,
+            RecordedData(
+                user_id,
+                assignment_id,
+                user_notification_info,
+                survey_notification_info,
+                notification_type,
             )
         )
+        return True

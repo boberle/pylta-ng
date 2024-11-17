@@ -7,16 +7,12 @@ from lta.api.configuration import (
     AppConfiguration,
     get_assignment_service,
     get_configuration,
-    get_notification_service,
-    get_test_notification,
     get_user_repository,
 )
 from lta.authentication import AuthenticatedUser, get_authenticated_user
 from lta.domain.assignment import AnswerType
 from lta.domain.assignment_repository import SubmissionTooLate
 from lta.domain.scheduler.assignment_service import AssignmentService
-from lta.domain.scheduler.notification_pulisher import Notification
-from lta.domain.scheduler.notification_service import NotificationService
 from lta.domain.survey import (
     MultipleChoiceQuestion,
     OpenEndedQuestion,
@@ -214,19 +210,6 @@ def register_device(
         os=request.os,
         version=request.version,
         date=connection_time,
-    )
-
-
-@router.get("/test-notification/")
-def notify_user(
-    notification_service: NotificationService = Depends(get_notification_service),
-    user: AuthenticatedUser = Depends(get_authenticated_user),
-    test_notification: Notification = Depends(get_test_notification),
-) -> None:
-    notification_service.send_notification(
-        user_id=user.id,
-        notification_title=test_notification.title,
-        notification_message=test_notification.message,
     )
 
 

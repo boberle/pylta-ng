@@ -9,8 +9,6 @@ class NotificationScheduler(Protocol):
         self,
         user_id: str,
         assignment_id: str,
-        notification_title: str,
-        notification_message: str,
         when: datetime | None = None,
     ) -> None: ...
 
@@ -19,7 +17,5 @@ class NotificationScheduler(Protocol):
         self,
         user_id: str,
         assignment_id: str,
-        notification_title: str,
-        notification_message: str,
         when: datetime,
     ) -> None: ...

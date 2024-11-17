@@ -1,9 +1,8 @@
 import logging
 import random
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
-from typing import Generator, Optional, Protocol
+from typing import Generator, Optional
 
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule import Day, Schedule, TimeRange
@@ -11,13 +10,8 @@ from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
 
 
-class SchedulerService(Protocol):
-    @abstractmethod
-    def schedule_assignments(self, ref_time: datetime) -> None: ...
-
-
 @dataclass
-class BasicSchedulerService(SchedulerService):
+class SchedulerService:
     assignment_scheduler: AssignmentScheduler
     schedule_repository: ScheduleRepository
     group_repository: GroupRepository
@@ -122,6 +116,11 @@ def get_previous_monday(ref_time: datetime) -> date:
     days_since_monday = ref_time.weekday()
     monday = (ref_time - timedelta(days=days_since_monday)).date()
     return monday
+
+
+def get_next_monday(ref_time: datetime) -> date:
+    days_until_monday = 6 - ref_time.weekday() + 1
+    return (ref_time + timedelta(days=days_until_monday)).date()
 
 
 def get_datetime_ranges_from_dates_and_time_range(

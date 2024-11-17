@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import EmailStr
 
-from lta.domain.user import Device, DeviceOS, User
+from lta.domain.user import Device, DeviceOS, User, UserNotificationInfo
 from lta.domain.user_repository import UserNotFound, UserRepository
 
 
@@ -51,17 +51,18 @@ class InMemoryUserRepository(UserRepository):
         email_address: EmailStr,
         created_at: datetime,
         notification_email: EmailStr | None = None,
+        phone_number: str | None = None,
     ) -> None:
         user = User(
             id=id,
             email_address=email_address,
             created_at=created_at,
-            notification_email=notification_email,
+            notification_info=UserNotificationInfo(
+                email_address=notification_email,
+                phone_number=phone_number,
+            ),
         )
         self.users[id] = user
 
     def exists(self, id: str) -> bool:
         return id in self.users
-
-    def get_notification_email(self, id: str) -> str | None:
-        return self.users[id].notification_email

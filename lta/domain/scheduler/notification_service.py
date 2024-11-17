@@ -1,169 +1,104 @@
-from abc import abstractmethod
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Protocol
 
+from lta.domain.assignment import Assignment
 from lta.domain.assignment_repository import AssignmentRepository
 from lta.domain.scheduler.notification_pulisher import (
-    EmailNotificationPublisher,
-    Notification,
-    PushNotificationPublisher,
+    NotificationPublisher,
+    NotificationType,
 )
-from lta.domain.user import DeviceOS
+from lta.domain.survey_repository import SurveyRepository
+from lta.domain.user import User
 from lta.domain.user_repository import UserRepository
 
 
 @dataclass
-class UnsupportedOSError(Exception):
-    os: DeviceOS
+class NotificationService:
+    """
+    The notification service is used to send a notification message to a user.
 
+    It requires a user id and an assignment id.
 
-class NotificationSendingPolicy:
-    @abstractmethod
-    def should_send_notification(
-        self,
-        assignment_repository: AssignmentRepository,
-        user_id: str,
-        assignment_id: str,
-    ) -> bool: ...
+    The notification channel is determined by the available information
+    - on the user: phone number (SMS), email address (email), or device token (push notification)
+    - on the survey (found in the assignment): notification title and message for each channel
 
+    The service also update the assignment with the notification time.
 
-class AlwaysSendNotificationPolicy(NotificationSendingPolicy):
-    def should_send_notification(
-        self,
-        assignment_repository: AssignmentRepository,
-        user_id: str,
-        assignment_id: str,
-    ) -> bool:
-        return True
+    The notification is sent only if the assignment is not already submitted.
+    """
 
-
-class NotificationSendingAssignmentNotSubmitterPolicy(NotificationSendingPolicy):
-    def should_send_notification(
-        self,
-        assignment_repository: AssignmentRepository,
-        user_id: str,
-        assignment_id: str,
-    ) -> bool:
-        assigment = assignment_repository.get_assignment(user_id, assignment_id)
-        return assigment.submitted_at is None
-
-
-class NotificationService(Protocol):
-
-    @abstractmethod
-    def notify_user(
-        self,
-        user_id: str,
-        assignment_id: str,
-        notification_title: str,
-        notification_message: str,
-        policy: NotificationSendingPolicy = AlwaysSendNotificationPolicy(),
-        notified_at: datetime | None = None,
-    ) -> None: ...
-
-    @abstractmethod
-    def send_notification(
-        self,
-        user_id: str,
-        notification_title: str,
-        notification_message: str,
-    ) -> None: ...
-
-
-@dataclass
-class PushNotificationService(NotificationService):
-    ios_notification_publisher: PushNotificationPublisher
-    android_notification_publisher: PushNotificationPublisher
+    publishers: list[NotificationPublisher]
     user_repository: UserRepository
     assignment_repository: AssignmentRepository
+    survey_repository: SurveyRepository
 
     def notify_user(
         self,
         user_id: str,
         assignment_id: str,
-        notification_title: str,
-        notification_message: str,
-        policy: NotificationSendingPolicy = AlwaysSendNotificationPolicy(),
-        notified_at: datetime | None = None,
+        notification_type: NotificationType,
+        when: datetime | None = None,
     ) -> None:
-        if not policy.should_send_notification(
-            self.assignment_repository, user_id, assignment_id
-        ):
-            return
-        self.send_notification(user_id, notification_title, notification_message)
-        self._set_notified_at(
-            user_id, assignment_id, notified_at or datetime.now(tz=timezone.utc)
-        )
+        """
+        Send a notification now.
 
-    def _set_notified_at(
-        self, user_id: str, assignment_id: str, when: datetime
-    ) -> None:
-        self.assignment_repository.notify_user(user_id, assignment_id, when=when)
-
-    def send_notification(
-        self,
-        user_id: str,
-        notification_title: str,
-        notification_message: str,
-    ) -> None:
-        devices = self.user_repository.get_device_registrations_from_user_id(user_id)
-        for device in devices:
-            notification = Notification(
-                title=notification_title, message=notification_message
+        `when` is the time to be written in the assignment. It defaults to now if not provided.
+        """
+        user = self.user_repository.get_user(user_id)
+        assignment = self.assignment_repository.get_assignment(user_id, assignment_id)
+        if assignment.submitted_at is not None:
+            logging.info(
+                "Notification not sent: assignment is already submitted",
+                extra=dict(
+                    json_fields={"user_id": user_id, "assignment_id": assignment_id}
+                ),
             )
-            if device.os == DeviceOS.IOS:
-                self.ios_notification_publisher.publish(device.token, notification)
-            elif device.os == DeviceOS.ANDROID:
-                self.android_notification_publisher.publish(device.token, notification)
-            else:
-                raise UnsupportedOSError(os=device.os)
-
-
-@dataclass
-class EmailNotificationService(NotificationService):
-    notification_publisher: EmailNotificationPublisher
-    user_repository: UserRepository
-    assignment_repository: AssignmentRepository
-
-    def notify_user(
-        self,
-        user_id: str,
-        assignment_id: str,
-        notification_title: str,
-        notification_message: str,
-        policy: NotificationSendingPolicy = AlwaysSendNotificationPolicy(),
-        notified_at: datetime | None = None,
-    ) -> None:
-        if not policy.should_send_notification(
-            self.assignment_repository, user_id, assignment_id
-        ):
             return
 
-        notification_message = notification_message.format(
-            user_id=user_id, assignment_id=assignment_id
-        )
-        self.send_notification(user_id, notification_title, notification_message)
-        self._set_notified_at(
-            user_id, assignment_id, notified_at or datetime.now(tz=timezone.utc)
-        )
+        has_sent = self.send_notification(user, assignment, notification_type)
+        if not has_sent:
+            logging.warning(
+                "Notification not sent: no notification channel available",
+                extra=dict(
+                    json_fields={"user_id": user_id, "assignment_id": assignment_id}
+                ),
+            )
+            return
 
-    def _set_notified_at(
-        self, user_id: str, assignment_id: str, when: datetime
-    ) -> None:
-        self.assignment_repository.notify_user(user_id, assignment_id, when=when)
+        if when is None:
+            when = datetime.now(tz=timezone.utc)
+        self._update_assignment(user, assignment, when)
 
     def send_notification(
         self,
-        user_id: str,
-        notification_title: str,
-        notification_message: str,
-    ) -> None:
-        recipient_email = self.user_repository.get_notification_email(user_id)
-        if recipient_email is None:
-            raise ValueError(f"No notification email found for user id: {user_id}")
+        user: User,
+        assignment: Assignment,
+        notification_type: NotificationType,
+    ) -> bool:
+        user_notification_info = user.notification_info
+        if user_notification_info is None:
+            return False
 
-        notification = Notification(
-            title=notification_title, message=notification_message
-        )
-        self.notification_publisher.publish(recipient_email, notification)
+        survey = self.survey_repository.get_survey(assignment.survey_id)
+        survey_notification_info = survey.notification_info
+        if survey_notification_info is None:
+            return False
+
+        sent = False
+        for publisher in self.publishers:
+            success = publisher.send_notification(
+                user_id=user.id,
+                assignment_id=assignment.id,
+                user_notification_info=user_notification_info,
+                survey_notification_info=survey_notification_info,
+                notification_type=notification_type,
+            )
+            sent = sent or success
+        return sent
+
+    def _update_assignment(
+        self, user: User, assignment: Assignment, when: datetime
+    ) -> None:
+        self.assignment_repository.notify_user(user.id, assignment.id, when=when)

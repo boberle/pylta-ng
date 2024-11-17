@@ -1,4 +1,5 @@
 import urllib.request
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Generator
 
@@ -20,8 +21,52 @@ from lta.infra.repositories.memory.assignment_repository import (
 
 
 @pytest.fixture()
-def prefilled_memory_assignment_repository() -> InMemoryAssignmentRepository:
-    raise NotImplementedError("Prefilled memory assignment repository not implemented")
+def sample_assignment_1() -> Assignment:
+    return Assignment(
+        id="assignment1",
+        title="Sample first survey!",
+        user_id="user1",
+        survey_id="survey1",
+        created_at=datetime(2024, 1, 1, 1),
+        expired_at=datetime(2024, 1, 2, 1),
+    )
+
+
+@pytest.fixture()
+def sample_assignment_2() -> Assignment:
+    return Assignment(
+        id="assignment2",
+        title="Sample first survey!",
+        user_id="user1",
+        survey_id="survey1",
+        created_at=datetime(2024, 1, 1, 1),
+        expired_at=datetime(2024, 1, 2, 1),
+        submitted_at=datetime(2024, 1, 1, 3),
+    )
+
+
+@pytest.fixture()
+def sample_assignment_3() -> Assignment:
+    return Assignment(
+        id="assignment3",
+        title="Sample second survey!",
+        user_id="user2",
+        survey_id="survey2",
+        created_at=datetime(2024, 2, 1, 1),
+        expired_at=datetime(2024, 2, 2, 1),
+    )
+
+
+@pytest.fixture()
+def prefilled_memory_assignment_repository(
+    sample_assignment_1: Assignment,
+    sample_assignment_2: Assignment,
+    sample_assignment_3: Assignment,
+) -> InMemoryAssignmentRepository:
+    data: dict[str, dict[str, Assignment]] = defaultdict(dict)
+    for assignment in [sample_assignment_1, sample_assignment_2, sample_assignment_3]:
+        data[assignment.user_id][assignment.id] = assignment
+    return InMemoryAssignmentRepository(data)
 
 
 @pytest.fixture

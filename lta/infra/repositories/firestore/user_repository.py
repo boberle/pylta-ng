@@ -6,7 +6,7 @@ import pydantic
 from google.cloud import firestore
 from pydantic import EmailStr
 
-from lta.domain.user import Device, DeviceOS, User
+from lta.domain.user import Device, DeviceOS, User, UserNotificationInfo
 from lta.domain.user_repository import UserNotFound, UserRepository
 
 
@@ -72,20 +72,20 @@ class FirestoreUserRepository(UserRepository):
         email_address: EmailStr,
         created_at: datetime,
         notification_email: EmailStr | None = None,
+        phone_number: str | None = None,
     ) -> None:
         user = StoredUser(
             id=id,
             email_address=email_address,
             created_at=created_at,
             devices=[],
-            notification_email=notification_email,
+            notification_info=UserNotificationInfo(
+                email_address=notification_email,
+                phone_number=phone_number,
+            ),
         )
         self.client.collection(self.collection_name).document(id).set(user.model_dump())
 
     def exists(self, id: str) -> bool:
         user_ref = self.client.collection(self.collection_name).document(id)
         return cast(bool, user_ref.get().exists)
-
-    def get_notification_email(self, id: str) -> str | None:
-        user = self.get_user(id)
-        return user.notification_email

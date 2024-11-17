@@ -4,54 +4,72 @@ from dataclasses import dataclass
 import vonage
 
 from lta.domain.scheduler.notification_pulisher import (
-    Notification,
-    SMSNotificationPublisher,
+    NotificationPublisher,
+    NotificationType,
 )
+from lta.domain.survey import SurveyNotificationInfo
+from lta.domain.user import UserNotificationInfo
 
 
 @dataclass
-class VonageSettings:
-    api_key: str
-    api_secret: str
+class VonageNotificationPublisher(NotificationPublisher):
+    client: vonage.Client
     sender: str
 
+    def send_notification(
+        self,
+        user_id: str,
+        assignment_id: str,
+        user_notification_info: UserNotificationInfo,
+        survey_notification_info: SurveyNotificationInfo,
+        notification_type: NotificationType,
+    ) -> bool:
+        phone_number = user_notification_info.phone_number
+        notification_set = survey_notification_info.sms_notification
+        if phone_number is None or notification_set is None:
+            return False
 
-@dataclass
-class VonageNotificationPublisher(SMSNotificationPublisher):
-    settings: VonageSettings
-
-    def publish(self, recipient_phone_number: str, notification: Notification) -> None:
-        client = vonage.Client(
-            key=self.settings.api_key, secret=self.settings.api_secret
+        if notification_type == NotificationType.INITIAL:
+            notification_message = notification_set.initial_notification.message
+        else:
+            notification_message = notification_set.reminder_notification.message
+        notification_message = notification_message.format(
+            user_id=user_id, assignment_id=assignment_id
         )
-        sms = vonage.Sms(client)
 
+        sms = vonage.Sms(self.client)
         response_data = sms.send_message(
             {
-                "from": self.settings.sender,
-                "to": recipient_phone_number,
-                "text": notification.message,
+                "from": self.sender,
+                "to": phone_number,
+                "text": notification_message,
             }
         )
 
         if response_data["messages"][0]["status"] == "0":
             logging.info(
-                "Message sent successfully",
+                "Vonage SMS sent successfully",
                 extra=dict(
                     json_fields=dict(
-                        recipient_phone_number=recipient_phone_number,
-                        notification_message=notification.message,
+                        user_id=user_id,
+                        assignment_id=assignment_id,
+                        phone_number=phone_number,
+                        notification_message=notification_message,
                     )
                 ),
             )
+            return True
         else:
-            logging.info(
-                "Message sent successfully",
+            logging.error(
+                "Error when sending Vonage SMS",
                 extra=dict(
                     json_fields=dict(
-                        recipient_phone_number=recipient_phone_number,
-                        notification_message=notification.message,
+                        user_id=user_id,
+                        assignment_id=assignment_id,
+                        recipient_phone_number=phone_number,
+                        notification_message=notification_message,
                         error_message=response_data["messages"][0]["error-text"],
                     )
                 ),
             )
+            return False

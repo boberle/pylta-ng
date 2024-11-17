@@ -2,14 +2,14 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Protocol
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from lta.domain.survey import (
     MultipleChoiceQuestion,
-    NotificationMessage,
     OpenEndedQuestion,
     SingleChoiceQuestion,
     Survey,
+    SurveyNotificationInfo,
     get_test_survey,
 )
 
@@ -25,9 +25,10 @@ class SurveyCreation(BaseModel):
     title: str
     welcome_message: str
     submit_message: str
-    publish_notification: NotificationMessage
-    soon_to_expire_notification: NotificationMessage
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
+    notification_info: SurveyNotificationInfo = Field(
+        default_factory=SurveyNotificationInfo
+    )
 
 
 class SurveyRepository(Protocol):

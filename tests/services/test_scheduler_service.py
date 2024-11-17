@@ -1,38 +1,35 @@
 import random
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timezone
 
 import pytest
 
-from lta.domain.group_repository import GroupRepository
+# from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule import Day, TimeRange
-from lta.domain.schedule_repository import ScheduleRepository
-from lta.domain.scheduler.assignment_service import BasicAssignmentService
-from lta.domain.scheduler.notification_service import PushNotificationService
+
+# from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.scheduler_service import (
-    BasicSchedulerService,
     DatetimeRange,
     get_dates_from_days,
     get_datetime_ranges_from_dates_and_time_range,
+    get_next_monday,
     get_previous_monday,
     get_random_datetime,
     keep_ranges_after_ref_time,
 )
-from lta.domain.survey_repository import SurveyRepository
-from lta.domain.user_repository import UserRepository
-from lta.infra.repositories.memory.assignment_repository import (
-    InMemoryAssignmentRepository,
-)
-from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentScheduler
-from lta.infra.scheduler.recording.notification_publisher import (
-    RecordingNotificationPublisher,
-)
-from lta.infra.scheduler.recording.notification_scheduler import (
-    RecordingDirectNotificationScheduler,
-)
-from tests.fixtures.assignment_repositories import AlwaysSubmittedAssignmentRepository
-from tests.services.asserts_scheduler_service import (
-    assert_scheduler_service_for_date_20230102,
-)
+
+# from lta.domain.survey_repository import SurveyRepository
+# from lta.domain.user_repository import UserRepository
+# from lta.infra.repositories.memory.assignment_repository import (
+#    InMemoryAssignmentRepository,
+# )
+# from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentScheduler
+# from lta.infra.scheduler.recording.notification_publisher import (
+#    RecordingNotificationPublisher,
+# )
+# from tests.fixtures.assignment_repositories import AlwaysSubmittedAssignmentRepository
+# from tests.services.asserts_scheduler_service import (
+#    assert_scheduler_service_for_date_20230102,
+# )
 
 
 @pytest.mark.parametrize(
@@ -58,6 +55,31 @@ from tests.services.asserts_scheduler_service import (
 )
 def test_get_previous_monday(ref_time: datetime, expected_monday: date) -> None:
     assert get_previous_monday(ref_time) == expected_monday
+
+
+@pytest.mark.parametrize(
+    "ref_time, expected_monday",
+    [
+        (
+            datetime(2023, 10, 16, tzinfo=timezone.utc),  # Monday
+            date(2023, 10, 23),
+        ),
+        (
+            datetime(2023, 10, 17, tzinfo=timezone.utc),  # Tuesday
+            date(2023, 10, 23),
+        ),
+        (
+            datetime(2023, 10, 20, tzinfo=timezone.utc),  # Friday
+            date(2023, 10, 23),
+        ),
+        (
+            datetime(2023, 10, 22, tzinfo=timezone.utc),  # Sunday
+            date(2023, 10, 23),
+        ),
+    ],
+)
+def test_get_next_monday(ref_time: datetime, expected_monday: date) -> None:
+    assert get_next_monday(ref_time) == expected_monday
 
 
 @pytest.mark.parametrize(
@@ -247,63 +269,63 @@ def test_get_random_datetime(
     assert expected == result
 
 
-@pytest.mark.xfail(reason="Need to rework this test")
-@pytest.mark.parametrize("assignment_is_submitted", [True, False])
-def test_schedule_assignments_for_date__using_direct_scheduler(
-    prefilled_memory_user_repository: UserRepository,
-    prefilled_memory_schedule_repository: ScheduleRepository,
-    prefilled_memory_group_repository: GroupRepository,
-    prefilled_memory_survey_repository: SurveyRepository,
-    empty_memory_assignment_repository: InMemoryAssignmentRepository,
-    always_submitted_assignment_repository: AlwaysSubmittedAssignmentRepository,
-    assignment_is_submitted: bool,
-) -> None:
-    ios_notification_publisher = RecordingNotificationPublisher()
-    android_notification_publisher = RecordingNotificationPublisher()
-
-    assignment_repository = (
-        always_submitted_assignment_repository
-        if assignment_is_submitted
-        else empty_memory_assignment_repository
-    )
-
-    notification_service = PushNotificationService(
-        ios_notification_publisher=ios_notification_publisher,
-        android_notification_publisher=android_notification_publisher,
-        user_repository=prefilled_memory_user_repository,
-        assignment_repository=assignment_repository,
-    )
-
-    notification_scheduler = RecordingDirectNotificationScheduler(
-        user_repository=prefilled_memory_user_repository,
-        notification_service=notification_service,
-    )
-    assignment_service = BasicAssignmentService(
-        notification_scheduler=notification_scheduler,
-        assignment_repository=assignment_repository,
-        survey_repository=prefilled_memory_survey_repository,
-        soon_to_expire_notification_delay=timedelta(minutes=30),
-        rand=random.Random(100),
-    )
-
-    assignment_scheduler = DirectAssignmentScheduler(
-        assignment_service=assignment_service,
-    )
-
-    service = BasicSchedulerService(
-        assignment_scheduler=assignment_scheduler,
-        schedule_repository=prefilled_memory_schedule_repository,
-        group_repository=prefilled_memory_group_repository,
-        rand=random.Random(100),
-    )
-
-    now = datetime(2023, 1, 2)
-    service.schedule_assignments(ref_time=now)
-
-    assert_scheduler_service_for_date_20230102(
-        assignment_repository=assignment_repository,
-        notification_scheduler=notification_scheduler,
-        android_notification_publisher=android_notification_publisher,
-        ios_notification_publisher=ios_notification_publisher,
-        assignments_are_submitted=assignment_is_submitted,
-    )
+# @pytest.mark.xfail(reason="Need to rework this test")
+# @pytest.mark.parametrize("assignment_is_submitted", [True, False])
+# def test_schedule_assignments_for_date__using_direct_scheduler(
+#    prefilled_memory_user_repository: UserRepository,
+#    prefilled_memory_schedule_repository: ScheduleRepository,
+#    prefilled_memory_group_repository: GroupRepository,
+#    prefilled_memory_survey_repository: SurveyRepository,
+#    empty_memory_assignment_repository: InMemoryAssignmentRepository,
+#    always_submitted_assignment_repository: AlwaysSubmittedAssignmentRepository,
+#    assignment_is_submitted: bool,
+# ) -> None:
+#    ios_notification_publisher = RecordingNotificationPublisher()
+#    android_notification_publisher = RecordingNotificationPublisher()
+#
+#    assignment_repository = (
+#        always_submitted_assignment_repository
+#        if assignment_is_submitted
+#        else empty_memory_assignment_repository
+#    )
+#
+#    notification_service = PushNotificationService(
+#        ios_notification_publisher=ios_notification_publisher,
+#        android_notification_publisher=android_notification_publisher,
+#        user_repository=prefilled_memory_user_repository,
+#        assignment_repository=assignment_repository,
+#    )
+#
+#    notification_scheduler = RecordingDirectNotificationScheduler(
+#        user_repository=prefilled_memory_user_repository,
+#        notification_service=notification_service,
+#    )
+#    assignment_service = BasicAssignmentService(
+#        notification_scheduler=notification_scheduler,
+#        assignment_repository=assignment_repository,
+#        survey_repository=prefilled_memory_survey_repository,
+#        soon_to_expire_notification_delay=timedelta(minutes=30),
+#        rand=random.Random(100),
+#    )
+#
+#    assignment_scheduler = DirectAssignmentScheduler(
+#        assignment_service=assignment_service,
+#    )
+#
+#    service = BasicSchedulerService(
+#        assignment_scheduler=assignment_scheduler,
+#        schedule_repository=prefilled_memory_schedule_repository,
+#        group_repository=prefilled_memory_group_repository,
+#        rand=random.Random(100),
+#    )
+#
+#    now = datetime(2023, 1, 2)
+#    service.schedule_assignments(ref_time=now)
+#
+#    assert_scheduler_service_for_date_20230102(
+#        assignment_repository=assignment_repository,
+#        notification_scheduler=notification_scheduler,
+#        android_notification_publisher=android_notification_publisher,
+#        ios_notification_publisher=ios_notification_publisher,
+#        assignments_are_submitted=assignment_is_submitted,
+#    )

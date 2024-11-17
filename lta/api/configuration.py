@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 import firebase_admin
 import firebase_admin.firestore
 import google.cloud.firestore
+import vonage
 from google.cloud import tasks_v2
 from pydantic import EmailStr, Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,24 +18,11 @@ from lta.domain.assignment_repository import AssignmentRepository
 from lta.domain.group_repository import GroupRepository
 from lta.domain.schedule_repository import ScheduleRepository
 from lta.domain.scheduler.assignment_scheduler import AssignmentScheduler
-from lta.domain.scheduler.assignment_service import (
-    AssignmentService,
-    BasicAssignmentService,
-)
-from lta.domain.scheduler.notification_pulisher import (
-    EmailNotificationPublisher,
-    Notification,
-    PushNotificationPublisher,
-)
+from lta.domain.scheduler.assignment_service import AssignmentService
 from lta.domain.scheduler.notification_scheduler import NotificationScheduler
-from lta.domain.scheduler.notification_service import (
-    EmailNotificationService,
-    NotificationService,
-)
-from lta.domain.scheduler.scheduler_service import (
-    BasicSchedulerService,
-    SchedulerService,
-)
+from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.scheduler.scheduler_service import SchedulerService
+from lta.domain.survey import NotificationMessage
 from lta.domain.survey_repository import SurveyRepository
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.firestore.assignment_repository import (
@@ -50,7 +38,6 @@ from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentSche
 from lta.infra.scheduler.direct.notification_scheduler import (
     DirectNotificationScheduler,
 )
-from lta.infra.scheduler.expo.notification_publisher import ExpoNotificationPublisher
 from lta.infra.scheduler.google_tasks.assignment_scheduler import (
     CloudTasksAssignmentScheduler,
 )
@@ -58,8 +45,11 @@ from lta.infra.scheduler.google_tasks.notification_scheduler import (
     CloudTasksNotificationScheduler,
 )
 from lta.infra.scheduler.mailgun.notification_publisher import (
+    MailgunAPI,
     MailgunNotificationPublisher,
-    MailgunSettings,
+)
+from lta.infra.scheduler.vonage.notification_publisher import (
+    VonageNotificationPublisher,
 )
 from lta.infra.tasks_api import CloudTasksAPI
 
@@ -92,6 +82,10 @@ class Settings(BaseSettings):
     MAILGUN_API_KEY: Optional[str] = None
     MAILGUN_API_URL: Optional[str] = None
     MAILGUN_SENDER: Optional[str] = None
+
+    VONAGE_API_KEY: Optional[str] = None
+    VONAGE_API_SECRET: Optional[str] = None
+    VONAGE_SENDER: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file="settings/env.local-dev")
 
@@ -137,37 +131,51 @@ class AppConfiguration:
         return get_settings().ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE
 
     @cached_property
-    def expo_notification_publisher(self) -> PushNotificationPublisher:
-        return ExpoNotificationPublisher()
-
-    @cached_property
     def notification_service(self) -> NotificationService:
-        # return PushNotificationService(
-        #    ios_notification_publisher=self.expo_notification_publisher,
-        #    android_notification_publisher=self.expo_notification_publisher,
-        #    user_repository=self.user_repository,
-        #    assignment_repository=self.assignment_repository,
-        # )
-        return EmailNotificationService(
-            notification_publisher=self.email_notification_publisher,
+        return NotificationService(
+            publishers=[
+                self.mailgun_notification_publisher,
+                self.vonage_notification_publisher,
+            ],
             user_repository=self.user_repository,
             assignment_repository=self.assignment_repository,
+            survey_repository=self.survey_repository,
         )
 
     @cached_property
-    def email_notification_publisher(self) -> EmailNotificationPublisher:
+    def mailgun_notification_publisher(self) -> MailgunNotificationPublisher:
         api_key = get_settings().MAILGUN_API_KEY
         api_url = get_settings().MAILGUN_API_URL
         sender = get_settings().MAILGUN_SENDER
         assert (
             api_key and api_url and sender
         ), "Missing Mailgun API key, API URL, or sender"
+
+        api = MailgunAPI(
+            api_key=api_key,
+            api_url=api_url,
+        )
         return MailgunNotificationPublisher(
-            settings=MailgunSettings(
-                api_key=api_key,
-                api_url=api_url,
-                sender=sender,
-            )
+            api=api,
+            sender=sender,
+        )
+
+    @cached_property
+    def vonage_notification_publisher(self) -> VonageNotificationPublisher:
+        api_key = get_settings().VONAGE_API_KEY
+        api_secret = get_settings().VONAGE_API_SECRET
+        sender = get_settings().VONAGE_SENDER
+        assert (
+            api_key and api_secret and sender
+        ), "Missing Vonage API key, API secret, or sender"
+
+        client = vonage.Client(
+            key=api_key,
+            secret=api_secret,
+        )
+        return VonageNotificationPublisher(
+            client=client,
+            sender=sender,
         )
 
     @cached_property
@@ -200,11 +208,11 @@ class AppConfiguration:
             notification_scheduler = self.direct_notification_scheduler
         else:
             notification_scheduler = self.cloud_tasks_notification_scheduler
-        return BasicAssignmentService(
+        return AssignmentService(
             assignment_repository=self.assignment_repository,
             notification_scheduler=notification_scheduler,
             survey_repository=self.survey_repository,
-            soon_to_expire_notification_delay=timedelta(
+            reminder_notification_delay=timedelta(
                 minutes=get_settings().SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
             ),
         )
@@ -239,7 +247,7 @@ class AppConfiguration:
             assignment_scheduler = self.direct_assignment_scheduler
         else:
             assignment_scheduler = self.cloud_tasks_assignment_scheduler
-        return BasicSchedulerService(
+        return SchedulerService(
             assignment_scheduler=assignment_scheduler,
             schedule_repository=self.schedule_repository,
             group_repository=self.group_repository,
@@ -345,8 +353,8 @@ def get_user_repository() -> UserRepository:
     return get_configuration().user_repository
 
 
-def get_test_notification() -> Notification:
-    return Notification(
+def get_test_notification() -> NotificationMessage:
+    return NotificationMessage(
         title=get_settings().TEST_NOTIFICATION_TITLE,
         message=get_settings().TEST_NOTIFICATION_MESSAGE,
     )
@@ -356,5 +364,5 @@ def get_use_google_cloud_logging() -> bool:
     return get_settings().USE_GOOGLE_CLOUD_LOGGING
 
 
-def get_email_notification_publisher() -> EmailNotificationPublisher:
-    return get_configuration().email_notification_publisher
+def get_mailgun_notification_publisher() -> MailgunNotificationPublisher:
+    return get_configuration().mailgun_notification_publisher

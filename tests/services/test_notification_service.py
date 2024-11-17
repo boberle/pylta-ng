@@ -1,163 +1,190 @@
+import logging
 from datetime import datetime, timezone
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 
 from lta.domain.assignment import Assignment
-from lta.domain.scheduler.notification_service import (
-    NotificationSendingAssignmentNotSubmitterPolicy,
-    PushNotificationService,
+from lta.domain.scheduler.notification_pulisher import (
+    NotificationPublisher,
+    NotificationType,
 )
+from lta.domain.scheduler.notification_service import NotificationService
+from lta.domain.survey import Survey, SurveyNotificationInfo
+from lta.domain.survey_repository import SurveyRepository
+from lta.domain.user import User, UserNotificationInfo
 from lta.domain.user_repository import UserRepository
 from lta.infra.repositories.memory.assignment_repository import (
     InMemoryAssignmentRepository,
 )
 from lta.infra.scheduler.recording.notification_publisher import (
+    RecordedData,
     RecordingNotificationPublisher,
 )
 
 
-def test_notify_user(prefilled_memory_user_repository: UserRepository) -> None:
-    ios_notification_publisher = RecordingNotificationPublisher()
-    android_notification_publisher = RecordingNotificationPublisher()
-    assignment_repository = InMemoryAssignmentRepository()
-    assignment_repository.create_assignment(
-        user_id="user1",
-        id="assignment1",
-        survey_id="survey1",
-        survey_title="Latest Survey",
-        created_at=datetime(2022, 1, 1, 0, 0, tzinfo=timezone.utc),
-    )
-
-    service = PushNotificationService(
-        ios_notification_publisher=ios_notification_publisher,
-        android_notification_publisher=android_notification_publisher,
-        user_repository=prefilled_memory_user_repository,
-        assignment_repository=assignment_repository,
-    )
-
-    service.notify_user(
-        user_id="user1",
-        assignment_id="assignment1",
-        notification_title="New Survey Available",
-        notification_message="Please take a look at the latest survey",
-    )
-
-    assert len(android_notification_publisher.recorder) == 1
-    assert android_notification_publisher.recorder[0] == {
-        "device_token": "user1_device1",
-        "title": "New Survey Available",
-        "message": "Please take a look at the latest survey",
-    }
-
-    assert len(ios_notification_publisher.recorder) == 1
-    assert ios_notification_publisher.recorder[0] == {
-        "device_token": "user1_device2",
-        "title": "New Survey Available",
-        "message": "Please take a look at the latest survey",
-    }
-
-    assert (
-        len(assignment_repository.get_assignment("user1", "assignment1").notified_at)
-        == 1
-    )
+@pytest.fixture
+def recording_notification_publisher() -> RecordingNotificationPublisher:
+    return RecordingNotificationPublisher()
 
 
-@pytest.mark.parametrize(
-    "assignment_id,expect_notification",
-    [
-        ("assignment1", True),
-        ("assignment2", False),
-    ],
-)
-def test_notify_user__check_assignment_is_not_submitted(
+@pytest.fixture
+def notification_service(
     prefilled_memory_user_repository: UserRepository,
-    assignment_id: str,
-    expect_notification: bool,
-) -> None:
-    ios_notification_publisher = RecordingNotificationPublisher()
-    android_notification_publisher = RecordingNotificationPublisher()
-    assignment_repository = InMemoryAssignmentRepository(
-        {
-            "user1": {
-                "assignment1": Assignment(
-                    id="assignment1",
-                    title="Sample first survey!",
-                    user_id="user1",
-                    survey_id="survey1",
-                    created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),
-                    expired_at=datetime(2023, 10, 10, 12, 0, 0, tzinfo=timezone.utc),
-                    notified_at=[datetime(2023, 10, 1, 14, 0, 0, tzinfo=timezone.utc)],
-                    opened_at=[datetime(2023, 10, 1, 15, 0, 0, tzinfo=timezone.utc)],
-                    submitted_at=None,
-                    answers=None,
-                ),
-                "assignment2": Assignment(
-                    id="assignment2",
-                    title="Sample first survey!",
-                    user_id="user1",
-                    survey_id="survey1",
-                    created_at=datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc),
-                    expired_at=datetime(2023, 10, 10, 12, 0, 0, tzinfo=timezone.utc),
-                    notified_at=[datetime(2023, 10, 1, 14, 0, 0, tzinfo=timezone.utc)],
-                    opened_at=[datetime(2023, 10, 1, 15, 0, 0, tzinfo=timezone.utc)],
-                    submitted_at=datetime(2023, 10, 1, 16, 0, 0, tzinfo=timezone.utc),
-                    answers=[1, 2, "answer"],
-                ),
-            }
-        }
-    )
-    service = PushNotificationService(
-        ios_notification_publisher=ios_notification_publisher,
-        android_notification_publisher=android_notification_publisher,
+    prefilled_memory_survey_repository: SurveyRepository,
+    prefilled_memory_assignment_repository: InMemoryAssignmentRepository,
+    recording_notification_publisher: RecordingNotificationPublisher,
+) -> NotificationService:
+    return NotificationService(
+        publishers=[recording_notification_publisher],
         user_repository=prefilled_memory_user_repository,
-        assignment_repository=assignment_repository,
+        assignment_repository=prefilled_memory_assignment_repository,
+        survey_repository=prefilled_memory_survey_repository,
     )
 
-    service.notify_user(
-        user_id="user1",
-        assignment_id=assignment_id,
-        notification_title="New Survey Available",
-        notification_message="Please take a look at the latest survey",
-        policy=NotificationSendingAssignmentNotSubmitterPolicy(),
+
+def test_send_notification(
+    notification_service: NotificationService,
+    recording_notification_publisher: RecordingNotificationPublisher,
+    sample_user_1: User,
+    sample_survey_1: Survey,
+    sample_assignment_1: Assignment,
+) -> None:
+    result = notification_service.send_notification(
+        user=sample_user_1,
+        assignment=sample_assignment_1,
+        notification_type=NotificationType.INITIAL,
     )
 
-    if expect_notification:
-        assert len(android_notification_publisher.recorder) == 1
-        assert android_notification_publisher.recorder[0] == {
-            "device_token": "user1_device1",
-            "title": "New Survey Available",
-            "message": "Please take a look at the latest survey",
-        }
-        assert len(ios_notification_publisher.recorder) == 1
-        assert ios_notification_publisher.recorder[0] == {
-            "device_token": "user1_device2",
-            "title": "New Survey Available",
-            "message": "Please take a look at the latest survey",
-        }
-        assert (
-            len(
-                assignment_repository.get_assignment("user1", "assignment1").notified_at
-            )
-            == 2
+    assert result is True
+    assert recording_notification_publisher.recorder == [
+        RecordedData(
+            user_id=sample_user_1.id,
+            assignment_id=sample_assignment_1.id,
+            user_notification_info=sample_user_1.notification_info,
+            survey_notification_info=sample_survey_1.notification_info,
+            notification_type=NotificationType.INITIAL,
         )
-        assert (
-            len(
-                assignment_repository.get_assignment("user1", "assignment2").notified_at
+    ]
+
+
+def test_send_notification__multiple_publishers(
+    notification_service: NotificationService,
+    recording_notification_publisher: RecordingNotificationPublisher,
+    sample_user_1: User,
+    sample_survey_1: Survey,
+    sample_assignment_1: Assignment,
+) -> None:
+    notification_service.publishers.append(recording_notification_publisher)
+    result = notification_service.send_notification(
+        user=sample_user_1,
+        assignment=sample_assignment_1,
+        notification_type=NotificationType.INITIAL,
+    )
+
+    assert result is True
+    assert (
+        recording_notification_publisher.recorder
+        == [
+            RecordedData(
+                user_id=sample_user_1.id,
+                assignment_id=sample_assignment_1.id,
+                user_notification_info=sample_user_1.notification_info,
+                survey_notification_info=sample_survey_1.notification_info,
+                notification_type=NotificationType.INITIAL,
             )
-            == 1
+        ]
+        * 2
+    )
+
+
+def test_send_notification__no_publisher(
+    notification_service: NotificationService,
+    prefilled_memory_survey_repository: SurveyRepository,
+    recording_notification_publisher: RecordingNotificationPublisher,
+    sample_user_1: User,
+    sample_assignment_1: Assignment,
+) -> None:
+    notification_service.publishers = []
+    result = notification_service.send_notification(
+        user=sample_user_1,
+        assignment=sample_assignment_1,
+        notification_type=NotificationType.INITIAL,
+    )
+
+    assert result is False
+    assert recording_notification_publisher.recorder == []
+
+
+def test_notify_user(
+    notification_service: NotificationService,
+    recording_notification_publisher: RecordingNotificationPublisher,
+    sample_user_1: User,
+    sample_assignment_1: Assignment,
+    sample_survey_1: Survey,
+) -> None:
+    ref_time = datetime.now(timezone.utc)
+    notification_service.notify_user(
+        user_id=sample_user_1.id,
+        assignment_id=sample_assignment_1.id,
+        notification_type=NotificationType.INITIAL,
+        when=ref_time,
+    )
+    assert recording_notification_publisher.recorder == [
+        RecordedData(
+            user_id=sample_user_1.id,
+            assignment_id=sample_assignment_1.id,
+            user_notification_info=sample_user_1.notification_info,
+            survey_notification_info=sample_survey_1.notification_info,
+            notification_type=NotificationType.INITIAL,
         )
-    else:
-        assert len(android_notification_publisher.recorder) == 0
-        assert len(ios_notification_publisher.recorder) == 0
-        assert (
-            len(
-                assignment_repository.get_assignment("user1", "assignment1").notified_at
-            )
-            == 1
+    ]
+
+    assert sample_assignment_1.notified_at == [ref_time]
+
+
+def test_notify_user__assignment_already_submitted(
+    notification_service: NotificationService,
+    prefilled_memory_survey_repository: SurveyRepository,
+    recording_notification_publisher: RecordingNotificationPublisher,
+    sample_user_1: User,
+    sample_assignment_2: Assignment,
+) -> None:
+    assert sample_assignment_2.submitted_at is not None
+    notification_service.notify_user(
+        user_id=sample_user_1.id,
+        assignment_id=sample_assignment_2.id,
+        notification_type=NotificationType.INITIAL,
+    )
+    assert recording_notification_publisher.recorder == []
+
+
+class FailingPublisher(NotificationPublisher):
+    def send_notification(
+        self,
+        user_id: str,
+        assignment_id: str,
+        user_notification_info: UserNotificationInfo,
+        survey_notification_info: SurveyNotificationInfo,
+        notification_type: NotificationType,
+    ) -> bool:
+        return False
+
+
+def test_notify_user__failing_publisher(
+    notification_service: NotificationService,
+    prefilled_memory_survey_repository: SurveyRepository,
+    sample_user_1: User,
+    sample_assignment_1: Assignment,
+    caplog: LogCaptureFixture,
+) -> None:
+    notification_service.publishers = [FailingPublisher()]
+    with caplog.at_level(logging.WARNING):
+        notification_service.notify_user(
+            user_id=sample_user_1.id,
+            assignment_id=sample_assignment_1.id,
+            notification_type=NotificationType.INITIAL,
         )
-        assert (
-            len(
-                assignment_repository.get_assignment("user1", "assignment2").notified_at
-            )
-            == 1
-        )
+        assert caplog.messages == [
+            "Notification not sent: no notification channel available"
+        ]

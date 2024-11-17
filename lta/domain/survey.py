@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Question(BaseModel):
@@ -27,14 +27,25 @@ class NotificationMessage(BaseModel):
     message: str
 
 
+class NotificationSet(BaseModel):
+    initial_notification: NotificationMessage
+    reminder_notification: NotificationMessage
+
+
+class SurveyNotificationInfo(BaseModel):
+    email_notification: NotificationSet | None = None
+    sms_notification: NotificationSet | None = None
+
+
 class Survey(BaseModel):
     id: str
     title: str
     welcome_message: str
     submit_message: str
-    publish_notification: NotificationMessage
-    soon_to_expire_notification: NotificationMessage
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
+    notification_info: SurveyNotificationInfo = Field(
+        default_factory=SurveyNotificationInfo
+    )
 
 
 def get_test_survey() -> Survey:
@@ -43,12 +54,6 @@ def get_test_survey() -> Survey:
         title="Test Survey",
         welcome_message="Welcome to the test survey!",
         submit_message="Thank you for completing the test survey!",
-        publish_notification=NotificationMessage(
-            title="Hi", message="The test survey is now available!"
-        ),
-        soon_to_expire_notification=NotificationMessage(
-            title="Hi", message="The test survey is soon to expire!"
-        ),
         questions=[
             SingleChoiceQuestion(
                 message="What is your favorite animal?",
@@ -63,4 +68,26 @@ def get_test_survey() -> Survey:
                 max_length=25,
             ),
         ],
+        notification_info=SurveyNotificationInfo(
+            email_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="Test Survey",
+                    message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
+                ),
+                reminder_notification=NotificationMessage(
+                    title="Reminder: Test Survey",
+                    message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
+                ),
+            ),
+            sms_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="",
+                    message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
+                ),
+                reminder_notification=NotificationMessage(
+                    title="",
+                    message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
+                ),
+            ),
+        ),
     )

@@ -1,26 +1,23 @@
 from abc import abstractmethod
+from enum import Enum
 from typing import Protocol
 
-from pydantic import BaseModel
+from lta.domain.survey import SurveyNotificationInfo
+from lta.domain.user import UserNotificationInfo
 
 
-class Notification(BaseModel):
-    title: str
-    message: str
+class NotificationType(str, Enum):
+    INITIAL = "initial"
+    REMINDER = "reminder"
 
 
-class PushNotificationPublisher(Protocol):
+class NotificationPublisher(Protocol):
     @abstractmethod
-    def publish(self, device_token: str, notification: Notification) -> None: ...
-
-
-class EmailNotificationPublisher(Protocol):
-    @abstractmethod
-    def publish(self, recipient_email: str, notification: Notification) -> None: ...
-
-
-class SMSNotificationPublisher(Protocol):
-    @abstractmethod
-    def publish(
-        self, recipient_phone_number: str, notification: Notification
-    ) -> None: ...
+    def send_notification(
+        self,
+        user_id: str,
+        assignment_id: str,
+        user_notification_info: UserNotificationInfo,
+        survey_notification_info: SurveyNotificationInfo,
+        notification_type: NotificationType,
+    ) -> bool: ...
