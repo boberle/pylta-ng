@@ -6,7 +6,7 @@ from typing import Literal
 
 import pydantic
 from google.cloud import firestore
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from lta.domain.schedule import Day, Schedule, TimeRange
 from lta.domain.schedule_repository import (
@@ -27,6 +27,8 @@ class StoredSchedule(BaseModel):
     user_ids: list[str] = Field(default_factory=list)
     group_ids: list[str] = Field(default_factory=list)
     same_time_for_all_users: bool
+
+    model_config = ConfigDict(extra="forbid")
 
     @staticmethod
     def from_domain(schedule: Schedule) -> StoredSchedule:

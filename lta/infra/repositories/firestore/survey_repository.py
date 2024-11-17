@@ -3,6 +3,7 @@ from typing import List, Literal
 
 import pydantic
 from google.cloud import firestore
+from pydantic import ConfigDict
 
 from lta.domain.survey import Survey
 from lta.domain.survey_repository import (
@@ -15,6 +16,7 @@ from lta.domain.survey_repository import (
 
 class StoredSurvey(Survey):
     revision: Literal[1] = 1
+    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass

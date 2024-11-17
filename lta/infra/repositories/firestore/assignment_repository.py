@@ -8,7 +8,7 @@ from typing import Any, List, Literal
 import pydantic
 from google.api_core.exceptions import NotFound
 from google.cloud import firestore
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from lta.domain.assignment import AnswerType, Assignment
 from lta.domain.assignment_repository import (
@@ -31,6 +31,8 @@ class StoredAssignment(BaseModel):
     opened_at: list[datetime]
     submitted_at: datetime | None
     answers: str | None
+
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_domain(cls, assigment: Assignment) -> StoredAssignment:

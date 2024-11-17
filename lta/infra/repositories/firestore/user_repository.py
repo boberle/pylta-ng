@@ -4,7 +4,7 @@ from typing import List, Literal, cast
 
 import pydantic
 from google.cloud import firestore
-from pydantic import EmailStr
+from pydantic import ConfigDict, EmailStr
 
 from lta.domain.user import Device, DeviceOS, User, UserNotificationInfo
 from lta.domain.user_repository import UserNotFound, UserRepository
@@ -12,6 +12,7 @@ from lta.domain.user_repository import UserNotFound, UserRepository
 
 class StoredUser(User):
     revision: Literal[1] = 1
+    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass
