@@ -7,16 +7,19 @@ from typer import Option, Typer
 
 from lta.api.configuration import (
     Environment,
+    get_assignment_repository,
     get_assignment_service,
     get_firebase_app,
     get_mailgun_notification_publisher,
+    get_schedule_repository,
     get_scheduler_service,
+    get_survey_repository,
     get_user_repository,
     set_environment,
 )
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
 
-app = Typer()
+app = Typer(pretty_exceptions_enable=False)
 
 
 @app.command()
@@ -122,6 +125,29 @@ def create_user(
         datetime.now(tz=timezone.utc),
         notification_email=notification_email,
     )
+
+
+@app.command()
+def check_model_parsing() -> None:
+    set_environment(Environment.LOCAL_PROD)
+
+    print("Checking users and assignments...")
+    user_repository = get_user_repository()
+    assignment_repository = get_assignment_repository()
+    for user in user_repository.list_users():
+        print(f"User: {user.id}... ok")
+        for assignment in assignment_repository.list_assignments(user_id=user.id):
+            print(f"Assignment: {assignment.id}... ok")
+
+    print("Checking surveys...")
+    survey_repository = get_survey_repository()
+    for survey in survey_repository.list_surveys():
+        print(f"Survey: {survey.id}... ok")
+
+    print("Checking schedules...")
+    schedule_repository = get_schedule_repository()
+    for schedule in schedule_repository.list_schedules():
+        print(f"Schedule: {schedule.id}... ok")
 
 
 if __name__ == "__main__":
