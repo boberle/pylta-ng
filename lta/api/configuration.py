@@ -353,6 +353,14 @@ def get_user_repository() -> UserRepository:
     return get_configuration().user_repository
 
 
+def get_assignment_repository() -> AssignmentRepository:
+    return get_configuration().assignment_repository
+
+
+def get_schedule_repository() -> ScheduleRepository:
+    return get_configuration().schedule_repository
+
+
 def get_test_notification() -> NotificationMessage:
     return NotificationMessage(
         title=get_settings().TEST_NOTIFICATION_TITLE,
