@@ -150,5 +150,21 @@ def check_model_parsing() -> None:
         print(f"Schedule: {schedule.id}... ok")
 
 
+@app.command()
+def stats() -> None:
+    set_environment(Environment.LOCAL_PROD)
+
+    user_repository = get_user_repository()
+    assignment_repository = get_assignment_repository()
+    for user in user_repository.list_users():
+        total = 0
+        submitted = 0
+        for assignment in assignment_repository.list_assignments(user_id=user.id):
+            total += 1
+            if assignment.submitted_at is not None:
+                submitted += 1
+        print(f"User: {user.id} - {user.email_address}: {submitted} / {total}")
+
+
 if __name__ == "__main__":
     app()
