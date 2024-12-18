@@ -118,16 +118,19 @@ def create_user(
     id: str | None = Option(None),
     email_address: str = Option(...),
     notification_email: str | None = Option(None),
+    phone_number: str | None = Option(None),
 ) -> None:
     set_environment(Environment.LOCAL_PROD)
     user_repository = get_user_repository()
     if id is None:
         id = str(uuid.uuid4())
+        print(f"Generated new user id: {id}")
     user_repository.create_user(
         id,
         email_address,
         datetime.now(tz=timezone.utc),
         notification_email=notification_email,
+        phone_number=phone_number,
     )
 
 
