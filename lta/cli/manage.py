@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from pprint import pprint
@@ -18,6 +19,9 @@ from lta.api.configuration import (
     set_environment,
 )
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
+
+logging.basicConfig(level=logging.DEBUG)
+
 
 app = Typer(pretty_exceptions_enable=False)
 
