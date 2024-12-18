@@ -88,6 +88,7 @@ class AssignmentResponse(BaseModel):
     welcome_message: str
     submit_message: str
     questions: list[SingleChoiceQuestion | MultipleChoiceQuestion | OpenEndedQuestion]
+    expired_at: datetime
 
 
 @router.get("/assignments/{user_id}/{assignment_id}/")
@@ -112,6 +113,7 @@ async def get_assignment_with_user_id(
         welcome_message=survey.welcome_message,
         submit_message=survey.submit_message,
         questions=survey.questions,
+        expired_at=assignment.expired_at,
     )
 
 
@@ -137,6 +139,7 @@ async def get_assignment(
         welcome_message=survey.welcome_message,
         submit_message=survey.submit_message,
         questions=survey.questions,
+        expired_at=assignment.expired_at,
     )
 
 
