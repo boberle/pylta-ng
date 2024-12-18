@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from lta.api.configuration import (
     Environment,
     get_assignment_service,
     get_survey_repository,
+    get_user_repository,
     set_environment,
 )
 from lta.domain.survey_repository import SurveyCreation
@@ -46,6 +48,19 @@ def schedule_assignment(
     ref_time = datetime.now(tz=timezone.utc)
     assignment_service.create_assignment(
         user_id=user_id, survey_id=survey_id, ref_time=ref_time
+    )
+
+
+@app.command()
+def create_user() -> None:
+    set_environment(Environment.LOCAL_DEV)
+    user_repository = get_user_repository()
+    id = str(uuid.uuid4())
+    print(f"Generated new user id: {id}")
+    user_repository.create_user(
+        id,
+        "foo@idontexist.net",
+        datetime.now(tz=timezone.utc),
     )
 
 
