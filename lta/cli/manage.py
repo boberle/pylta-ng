@@ -16,6 +16,7 @@ from lta.api.configuration import (
     get_scheduler_service,
     get_survey_repository,
     get_user_repository,
+    get_vonage_notification_publisher,
     set_environment,
 )
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
@@ -171,6 +172,25 @@ def stats() -> None:
             if assignment.submitted_at is not None:
                 submitted += 1
         print(f"User: {user.id} - {user.email_address}: {submitted} / {total}")
+
+
+@app.command()
+def send_test_sms_notification(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    notification_publisher = get_vonage_notification_publisher()
+    user_repository = get_user_repository()
+
+    phone_number = user_repository.get_user(user_id).notification_info.phone_number
+    if phone_number is None:
+        print(f"No notification phone number found for user id: {user_id}")
+        return
+
+    notification_publisher.send_sms(
+        phone_number=phone_number,
+        message="Test SMS Notification",
+    )
 
 
 if __name__ == "__main__":

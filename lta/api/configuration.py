@@ -374,3 +374,7 @@ def get_use_google_cloud_logging() -> bool:
 
 def get_mailgun_notification_publisher() -> MailgunNotificationPublisher:
     return get_configuration().mailgun_notification_publisher
+
+
+def get_vonage_notification_publisher() -> VonageNotificationPublisher:
+    return get_configuration().vonage_notification_publisher

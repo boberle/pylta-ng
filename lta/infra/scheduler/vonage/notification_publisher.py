@@ -73,3 +73,23 @@ class VonageNotificationPublisher(NotificationPublisher):
                 ),
             )
             return False
+
+    def send_sms(
+        self,
+        phone_number: str,
+        message: str,
+    ) -> None:
+        sms = vonage.Sms(self.client)
+        response_data = sms.send_message(
+            {
+                "from": self.sender,
+                "to": phone_number,
+                "text": message,
+            }
+        )
+
+        if response_data["messages"][0]["status"] == "0":
+            print("Success")
+        else:
+            error_message = (response_data["messages"][0]["error-text"],)
+            print(f"Error: {error_message}")
