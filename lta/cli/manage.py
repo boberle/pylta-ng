@@ -1,7 +1,10 @@
+import csv
 import logging
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from pprint import pprint
+from typing import Any
 
 import firebase_admin.auth
 from typer import Option, Typer
@@ -20,6 +23,8 @@ from lta.api.configuration import (
     set_environment,
 )
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
+from lta.domain.assignment import Assignment
+from lta.domain.survey import Survey
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -191,6 +196,97 @@ def send_test_sms_notification(
         phone_number=phone_number,
         message="Test SMS Notification",
     )
+
+
+@app.command()
+def export_csv(
+    user_ids: list[str] = Option(..., "--user-id", help="may be repeated"),
+    file: Path = Option(..., help="path to the output CSV file"),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    user_repository = get_user_repository()
+    assignment_repository = get_assignment_repository()
+    survey_repository = get_survey_repository()
+
+    assignment_data: list[dict[str, Any]] = []
+    surveys = {survey.id: survey for survey in survey_repository.list_surveys()}
+
+    for user_id in user_ids:
+        user = user_repository.get_user(user_id)
+        for assignment in assignment_repository.list_assignments(user_id=user.id):
+            assignment_data.append(
+                convert_assignment_to_dict(assignment, surveys[assignment.survey_id])
+            )
+
+    if len(assignment_data) == 0:
+        print("No assignments found for the given user ids.")
+        return
+
+    with file.open("w", newline="") as csvfile:
+        headers: list[str] = []
+        header_set: set[str] = set()
+        for a in assignment_data:
+            for k in a.keys():
+                if k not in header_set:
+                    headers.append(k)
+                    header_set.add(k)
+        csv_writer = csv.DictWriter(csvfile, fieldnames=headers)
+        csv_writer.writeheader()
+        csv_writer.writerows(assignment_data)
+
+
+def convert_assignment_to_dict(
+    assignment: Assignment, survey: Survey
+) -> dict[str, Any]:
+    if assignment.submitted_at and assignment.opened_at:
+
+        def compare(dt: datetime) -> bool:
+            assert assignment.submitted_at is not None
+            return dt < assignment.submitted_at
+
+        opened_at: datetime = next(filter(compare, assignment.opened_at[::-1]))
+        time_to_answer = (assignment.submitted_at - opened_at).total_seconds()
+    else:
+        time_to_answer = None
+
+    data = dict(
+        id=assignment.id,
+        user_id=assignment.user_id,
+        survey_id=assignment.survey_id,
+        submitted_at=assignment.submitted_at,
+        created_at=assignment.created_at,
+        expired_at=assignment.expired_at,
+        last_notified_at=(
+            assignment.notified_at[-1].isoformat() if assignment.notified_at else None
+        ),
+        number_of_notifications=len(assignment.notified_at),
+        last_opened_at=(
+            assignment.opened_at[-1].isoformat() if assignment.opened_at else None
+        ),
+        number_of_openings=len(assignment.opened_at),
+        has_answers=assignment.answers is not None,
+        time_to_answer_from_creation=(
+            (assignment.submitted_at - assignment.created_at).total_seconds()
+            if assignment.submitted_at
+            else None
+        ),
+        time_to_answer=time_to_answer,
+    )
+    if assignment.answers is None:
+        return data
+
+    for question, answer in zip(survey.questions, assignment.answers):
+        if question.type == "single-choice":
+            assert isinstance(answer, int)
+            data[question.message] = question.choices[answer]
+        elif question.type == "multiple-choice":
+            assert isinstance(answer, list)
+            data[question.message] = "\n".join(question.choices[i] for i in answer)
+        elif question.type == "open-ended":
+            assert isinstance(answer, str)
+            data[question.message] = answer
+
+    return data
 
 
 if __name__ == "__main__":
