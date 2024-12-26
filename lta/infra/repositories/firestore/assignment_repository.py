@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 import pydantic
 from google.api_core.exceptions import NotFound
@@ -50,7 +50,7 @@ class StoredAssignment(BaseModel):
         )
 
     @staticmethod
-    def serialize_answers(answers: List[AnswerType] | None) -> str | None:
+    def serialize_answers(answers: list[AnswerType] | None) -> str | None:
         return json.dumps(answers) if answers else None
 
     def to_domain(self) -> Assignment:
@@ -108,7 +108,7 @@ class FirestoreAssignmentRepository(AssignmentRepository):
 
     def list_assignments(
         self, user_id: str, limit: int | None = None
-    ) -> List[Assignment]:
+    ) -> list[Assignment]:
         assignments_ref = self._get_collection_ref(user_id).order_by(
             "created_at", direction=firestore.Query.DESCENDING
         )
@@ -144,7 +144,7 @@ class FirestoreAssignmentRepository(AssignmentRepository):
         user_id: str,
         id: str,
         when: datetime,
-        answers: List[AnswerType],
+        answers: list[AnswerType],
     ) -> None:
         doc_ref = self._get_collection_ref(user_id).document(id)
         doc = doc_ref.get()
@@ -164,7 +164,7 @@ class FirestoreAssignmentRepository(AssignmentRepository):
 
     def list_pending_assignments(
         self, user_id: str, ref_time: datetime
-    ) -> List[Assignment]:
+    ) -> list[Assignment]:
         assignments_ref = self._get_collection_ref(user_id)
         docs = (
             assignments_ref.where(filter=make_filter("user_id", "==", user_id))
