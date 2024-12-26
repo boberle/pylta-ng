@@ -10,11 +10,13 @@ class Question(BaseModel):
 class SingleChoiceQuestion(Question):
     type: Literal["single-choice"] = "single-choice"
     choices: list[str]
+    last_is_specify: bool = False
 
 
 class MultipleChoiceQuestion(Question):
     type: Literal["multiple-choice"] = "multiple-choice"
     choices: list[str]
+    last_is_specify: bool = False
 
 
 class OpenEndedQuestion(Question):
@@ -58,6 +60,7 @@ def get_test_survey() -> Survey:
             SingleChoiceQuestion(
                 message="What is your favorite animal?",
                 choices=["Dog", "Cat", "Bird", "Fish"],
+                last_is_specify=True,
             ),
             MultipleChoiceQuestion(
                 message="What are your favorite fruit?",
