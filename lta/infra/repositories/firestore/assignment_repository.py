@@ -10,13 +10,24 @@ from google.api_core.exceptions import NotFound
 from google.cloud import firestore
 from pydantic import BaseModel, ConfigDict
 
-from lta.domain.assignment import AnswerType, Assignment
+from lta.domain.assignment import (
+    AnswerType,
+    Assignment,
+    MultipleQuestionAnswer,
+    OpenEndedQuestionAnswer,
+    SingleQuestionAnswer,
+)
 from lta.domain.assignment_repository import (
     AssignmentNotFound,
     AssignmentRepository,
     SubmissionTooLate,
 )
 from lta.infra.repositories.firestore.utils import get_collection_count, make_filter
+
+
+class StoredAnswers(BaseModel):
+    revision: Literal[2] = 2
+    answers: list[AnswerType]
 
 
 class StoredAssignment(BaseModel):
@@ -51,7 +62,10 @@ class StoredAssignment(BaseModel):
 
     @staticmethod
     def serialize_answers(answers: list[AnswerType] | None) -> str | None:
-        return json.dumps(answers) if answers else None
+        if answers is None:
+            return None
+        stored_answers = StoredAnswers(answers=answers)
+        return stored_answers.model_dump_json()
 
     def to_domain(self) -> Assignment:
         return Assignment(
@@ -64,8 +78,33 @@ class StoredAssignment(BaseModel):
             notified_at=self.notified_at,
             opened_at=self.opened_at,
             submitted_at=self.submitted_at,
-            answers=json.loads(self.answers) if self.answers else None,
+            answers=self._deserialize_answers(self.answers),
         )
+
+    @staticmethod
+    def _deserialize_answers(data: str | None) -> list[AnswerType] | None:
+        if data is None:
+            return None
+
+        json_data = json.loads(data)
+        try:
+            stored_answers = pydantic.TypeAdapter(StoredAnswers).validate_python(
+                json_data
+            )
+            return stored_answers.answers
+        except pydantic.ValidationError:
+            rv: list[AnswerType] = []
+            revision1_answers = pydantic.TypeAdapter(
+                list[int | list[int] | str]
+            ).validate_python(json_data)
+            for answer in revision1_answers:
+                if isinstance(answer, list):
+                    rv.append(MultipleQuestionAnswer(selected_indices=answer))
+                elif isinstance(answer, int):
+                    rv.append(SingleQuestionAnswer(selected_index=answer))
+                elif isinstance(answer, str):
+                    rv.append(OpenEndedQuestionAnswer(value=answer))
+            return rv
 
 
 @dataclass

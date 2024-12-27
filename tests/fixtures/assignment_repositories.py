@@ -10,7 +10,11 @@ from lta.api.configuration import (
     get_firestore_client,
     get_project_name,
 )
-from lta.domain.assignment import Assignment
+from lta.domain.assignment import (
+    Assignment,
+    OpenEndedQuestionAnswer,
+    SingleQuestionAnswer,
+)
 from lta.domain.assignment_repository import AssignmentRepository
 from lta.infra.repositories.firestore.assignment_repository import (
     FirestoreAssignmentRepository,
@@ -111,7 +115,11 @@ class AlwaysSubmittedAssignmentRepository(InMemoryAssignmentRepository):
     def get_assignment(self, user_id: str, assignment_id: str) -> Assignment:
         assignment = super().get_assignment(user_id, assignment_id)
         assignment.submitted_at = datetime.now(tz=timezone.utc)
-        assignment.answers = [1, 2, "hello"]
+        assignment.answers = [
+            SingleQuestionAnswer(selected_index=1),
+            SingleQuestionAnswer(selected_index=2),
+            OpenEndedQuestionAnswer(value="hello"),
+        ]
         return assignment
 
 

@@ -2,7 +2,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from lta.domain.assignment import AnswerType, Assignment
+from lta.domain.assignment import (
+    AnswerType,
+    Assignment,
+    MultipleQuestionAnswer,
+    OpenEndedQuestionAnswer,
+    SingleQuestionAnswer,
+)
 from lta.domain.assignment_repository import AssignmentNotFound, AssignmentRepository
 
 
@@ -185,9 +191,9 @@ def test_submit_assignment(empty_assignment_repository: AssignmentRepository) ->
     )
 
     answers: list[AnswerType] = [
-        "Very good",
-        [1, 2],
-        3,
+        OpenEndedQuestionAnswer(value="Very good"),
+        MultipleQuestionAnswer(selected_indices=[1, 2]),
+        SingleQuestionAnswer(selected_index=3),
     ]
     when = datetime.now(tz=timezone.utc)
     empty_assignment_repository.submit_assignment(
@@ -276,7 +282,11 @@ def test_list_pending_assignments(
         answered_assignment.user_id,
         answered_assignment.id,
         when=lookup_time - timedelta(minutes=15),
-        answers=["Very good", [1, 2], 3],
+        answers=[
+            OpenEndedQuestionAnswer(value="Very good"),
+            MultipleQuestionAnswer(selected_indices=[1, 2]),
+            SingleQuestionAnswer(selected_index=3),
+        ],
     )
 
     got_pending_assignment_ids = list(
@@ -365,7 +375,11 @@ def test_count_non_answered_assignments(
         assignment1.user_id,
         assignment1.id,
         when=datetime.now(tz=timezone.utc),
-        answers=["Excellent", [3, 4], 5],
+        answers=[
+            OpenEndedQuestionAnswer(value="Excellent"),
+            MultipleQuestionAnswer(selected_indices=[3, 4]),
+            SingleQuestionAnswer(selected_index=5),
+        ],
     )
 
     assert empty_assignment_repository.count_non_answered_assignments("user1") == 2
@@ -454,7 +468,11 @@ def test_assignment_is_own_by_user(
         )
 
     # submit
-    answers: list[AnswerType] = ["Excellent", [3, 4], 5]
+    answers: list[AnswerType] = [
+        OpenEndedQuestionAnswer(value="Excellent"),
+        MultipleQuestionAnswer(selected_indices=[3, 4]),
+        SingleQuestionAnswer(selected_index=5),
+    ]
     empty_assignment_repository.submit_assignment(
         assignment1.user_id, assignment1.id, ref_time, answers=answers
     )
