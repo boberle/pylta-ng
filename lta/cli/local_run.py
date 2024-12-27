@@ -64,5 +64,22 @@ def create_user() -> None:
     )
 
 
+@app.command()
+def print_assignment_answers(
+    user_id: str = Option(...),
+    assignment_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_DEV)
+    assignment_service = get_assignment_service()
+    assignment = assignment_service.assignment_repository.get_assignment(
+        user_id, assignment_id
+    )
+    if assignment.answers is None:
+        print("No answers")
+    else:
+        for i, answer in enumerate(assignment.answers):
+            print(i, answer.model_dump())
+
+
 if __name__ == "__main__":
     app()
