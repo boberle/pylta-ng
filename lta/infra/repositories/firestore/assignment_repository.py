@@ -13,9 +13,9 @@ from pydantic import BaseModel, ConfigDict
 from lta.domain.assignment import (
     AnswerType,
     Assignment,
-    MultipleQuestionAnswer,
-    OpenEndedQuestionAnswer,
-    SingleQuestionAnswer,
+    MultipleChoiceAnswer,
+    OpenEndedAnswer,
+    SingleChoiceAnswer,
 )
 from lta.domain.assignment_repository import (
     AssignmentNotFound,
@@ -99,11 +99,11 @@ class StoredAssignment(BaseModel):
             ).validate_python(json_data)
             for answer in revision1_answers:
                 if isinstance(answer, list):
-                    rv.append(MultipleQuestionAnswer(selected_indices=answer))
+                    rv.append(MultipleChoiceAnswer(selected_indices=answer))
                 elif isinstance(answer, int):
-                    rv.append(SingleQuestionAnswer(selected_index=answer))
+                    rv.append(SingleChoiceAnswer(selected_index=answer))
                 elif isinstance(answer, str):
-                    rv.append(OpenEndedQuestionAnswer(value=answer))
+                    rv.append(OpenEndedAnswer(value=answer))
             return rv
 
 

@@ -2,9 +2,9 @@ import json
 from datetime import datetime, timezone
 
 from lta.domain.assignment import (
-    SingleQuestionAnswer,
-    MultipleQuestionAnswer,
-    OpenEndedQuestionAnswer,
+    MultipleChoiceAnswer,
+    OpenEndedAnswer,
+    SingleChoiceAnswer,
 )
 from lta.infra.repositories.firestore.assignment_repository import StoredAssignment
 
@@ -33,9 +33,9 @@ def test_answer_deserialization_revision_2() -> None:
     )
     got_answers = stored_assignment.to_domain().answers
     expected_answers = [
-        SingleQuestionAnswer(selected_index=0, specify_answer="abc"),
-        MultipleQuestionAnswer(selected_indices=[1, 2]),
-        OpenEndedQuestionAnswer(value="Sample answer"),
+        SingleChoiceAnswer(selected_index=0, specify_answer="abc"),
+        MultipleChoiceAnswer(selected_indices=[1, 2]),
+        OpenEndedAnswer(value="Sample answer"),
     ]
     assert got_answers == expected_answers
 
@@ -57,8 +57,8 @@ def test_answer_deserialization_revision_1() -> None:
     )
     got_answers = stored_assignment.to_domain().answers
     expected_answers = [
-        SingleQuestionAnswer(selected_index=0),
-        MultipleQuestionAnswer(selected_indices=[1, 2]),
-        OpenEndedQuestionAnswer(value="Sample answer"),
+        SingleChoiceAnswer(selected_index=0),
+        MultipleChoiceAnswer(selected_indices=[1, 2]),
+        OpenEndedAnswer(value="Sample answer"),
     ]
     assert got_answers == expected_answers

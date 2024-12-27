@@ -3,21 +3,21 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class SingleQuestionAnswer(BaseModel):
+class SingleChoiceAnswer(BaseModel):
     selected_index: int
     specify_answer: str | None = None
 
 
-class MultipleQuestionAnswer(BaseModel):
+class MultipleChoiceAnswer(BaseModel):
     selected_indices: list[int]
     specify_answer: str | None = None
 
 
-class OpenEndedQuestionAnswer(BaseModel):
+class OpenEndedAnswer(BaseModel):
     value: str
 
 
-AnswerType = SingleQuestionAnswer | MultipleQuestionAnswer | OpenEndedQuestionAnswer
+AnswerType = SingleChoiceAnswer | MultipleChoiceAnswer | OpenEndedAnswer
 
 
 class Assignment(BaseModel):
