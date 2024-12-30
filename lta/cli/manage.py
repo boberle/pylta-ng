@@ -1,12 +1,15 @@
 import csv
+import json
 import logging
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from pprint import pprint
 from typing import Any
 
 import firebase_admin.auth
+from google.cloud import firestore
 from typer import Option, Typer
 
 from lta.api.configuration import (
@@ -14,6 +17,7 @@ from lta.api.configuration import (
     get_assignment_repository,
     get_assignment_service,
     get_firebase_app,
+    get_firestore_client,
     get_mailgun_notification_publisher,
     get_schedule_repository,
     get_scheduler_service,
@@ -287,6 +291,57 @@ def convert_assignment_to_dict(
             data[question.message] = answer
 
     return data
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, o: Any) -> Any:
+        if isinstance(o, datetime):
+            return o.timestamp()
+        return super().default(o)
+
+
+@app.command()
+def backup_database(
+    output_dir: Path = Option(..., help="path to the output directory"),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    _check_directory_is_empty(output_dir)
+    client = get_firestore_client()
+    _backup_surveys(client, output_dir / "surveys.json")
+    _backup_users(client, output_dir / "users.json")
+    _backup_assignments(client, output_dir / "assignments.json")
+
+
+def _check_directory_is_empty(directory: Path) -> None:
+    if not directory.exists():
+        raise RuntimeError(f"Directory '{directory}' does not exist.")
+    if not directory.is_dir():
+        raise RuntimeError(f"'{directory}' is not a directory.")
+    if len(list(directory.iterdir())) > 0:
+        raise RuntimeError(f"Directory '{directory}' is not empty.")
+
+
+def _backup_surveys(client: firestore.Client, output_file: Path) -> None:
+    docs = client.collection("surveys").stream()
+    data = {doc.id: doc.to_dict() for doc in docs}
+    with output_file.open("w") as fh:
+        json.dump(data, fh, indent=2)
+
+
+def _backup_users(client: firestore.Client, output_file: Path) -> None:
+    docs = client.collection("users").stream()
+    data = {doc.id: doc.to_dict() for doc in docs}
+    with output_file.open("w") as fh:
+        json.dump(data, fh, indent=2, cls=CustomJSONEncoder)
+
+
+def _backup_assignments(client: firestore.Client, output_file: Path) -> None:
+    data: dict[str, dict[str, Any]] = defaultdict(dict)
+    for user_doc in client.collection("users").stream():
+        docs = user_doc.reference.collection("assignments").stream()
+        data[user_doc.id] = {doc.id: doc.to_dict() for doc in docs}
+    with output_file.open("w") as fh:
+        json.dump(data, fh, indent=2, cls=CustomJSONEncoder)
 
 
 if __name__ == "__main__":
