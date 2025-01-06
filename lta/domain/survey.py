@@ -22,6 +22,7 @@ class MultipleChoiceQuestion(Question):
 class OpenEndedQuestion(Question):
     type: Literal["open-ended"] = "open-ended"
     max_length: int = 200
+    optional: bool = False
 
 
 class NotificationMessage(BaseModel):
