@@ -9,6 +9,7 @@ from pprint import pprint
 from typing import Any
 
 import firebase_admin.auth
+import pydantic
 from google.cloud import firestore
 from typer import Option, Typer
 
@@ -366,6 +367,22 @@ def clone_survey(
     )
 
     print("Survey cloned successfully with id:", id)
+
+
+@app.command()
+def create_survey_from_file(
+    input_file: Path = Option(..., help="path to the input JSON file"),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    data = json.load(input_file.open())
+    survey = pydantic.TypeAdapter(SurveyCreation).validate_python(data)
+    survey_repository = get_survey_repository()
+    id = str(uuid.uuid4())
+    survey_repository.create_survey(
+        id=id,
+        survey=survey,
+    )
+    print("Survey created successfully with id:", id)
 
 
 if __name__ == "__main__":
