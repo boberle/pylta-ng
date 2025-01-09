@@ -29,6 +29,7 @@ from lta.api.configuration import (
 from lta.authentication import HAS_SET_OWN_PASSWORD_FIELD
 from lta.domain.assignment import Assignment
 from lta.domain.survey import Survey
+from lta.domain.survey_repository import SurveyCreation
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -342,6 +343,29 @@ def _backup_assignments(client: firestore.Client, output_file: Path) -> None:
         data[user_doc.id] = {doc.id: doc.to_dict() for doc in docs}
     with output_file.open("w") as fh:
         json.dump(data, fh, indent=2, cls=CustomJSONEncoder)
+
+
+@app.command()
+def clone_survey(
+    survey_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    survey_repository = get_survey_repository()
+    survey_to_clone = survey_repository.get_survey(survey_id)
+    survey = SurveyCreation(
+        title=survey_to_clone.title,
+        welcome_message=survey_to_clone.welcome_message,
+        submit_message=survey_to_clone.submit_message,
+        questions=survey_to_clone.questions,
+        notifications=survey_to_clone.notifications,
+    )
+    id = str(uuid.uuid4())
+    survey_repository.create_survey(
+        id=id,
+        survey=survey,
+    )
+
+    print("Survey cloned successfully with id:", id)
 
 
 if __name__ == "__main__":
