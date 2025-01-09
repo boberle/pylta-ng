@@ -42,21 +42,19 @@ def test_get_device_registrations_from_user_id(
         token="device1_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     device2 = Device(
         token="device2_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     empty_user_repository.add_device_registration(
-        "user1", device1.token, device1.os, device1.version, device1.first_connection
+        "user1", device1.token, device1.os, device1.version, ref_time
     )
     empty_user_repository.add_device_registration(
-        "user1", device2.token, device2.os, device2.version, device2.first_connection
+        "user1", device2.token, device2.os, device2.version, ref_time
     )
 
     empty_user_repository.create_user(
@@ -68,21 +66,19 @@ def test_get_device_registrations_from_user_id(
         token="device3_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     device4 = Device(
         token="device4_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     empty_user_repository.add_device_registration(
-        "user2", device3.token, device3.os, device3.version, device3.first_connection
+        "user2", device3.token, device3.os, device3.version, ref_time
     )
     empty_user_repository.add_device_registration(
-        "user2", device4.token, device4.os, device4.version, device4.first_connection
+        "user2", device4.token, device4.os, device4.version, ref_time
     )
 
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
@@ -148,15 +144,14 @@ def test_set_device_registration(empty_user_repository: UserRepository) -> None:
         token="device1_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     empty_user_repository.add_device_registration(
         "user1",
         device.token,
         device.os,
         device.version,
-        device.first_connection,
+        ref_time,
     )
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
     assert devices == [device]
@@ -173,15 +168,14 @@ def test_set_device_registration__multiple_registration(
         token="device1_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     empty_user_repository.add_device_registration(
         "user1",
         device.token,
         device.os,
         device.version,
-        device.first_connection,
+        ref_time,
     )
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
     assert devices == [device]
@@ -194,7 +188,7 @@ def test_set_device_registration__multiple_registration(
         datetime(2024, 2, 3, 4, 5, 6, tzinfo=timezone.utc),
     )
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
-    device.last_connection = datetime(2024, 2, 3, 4, 5, 6, tzinfo=timezone.utc)
+    device.connections.append(datetime(2024, 2, 3, 4, 5, 6, tzinfo=timezone.utc))
     assert devices == [device]
 
     empty_user_repository.add_device_registration(
@@ -205,7 +199,7 @@ def test_set_device_registration__multiple_registration(
         datetime(2024, 3, 4, 5, 6, 7, tzinfo=timezone.utc),
     )
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
-    device.last_connection = datetime(2024, 3, 4, 5, 6, 7, tzinfo=timezone.utc)
+    device.connections.append(datetime(2024, 3, 4, 5, 6, 7, tzinfo=timezone.utc))
     assert devices == [device]
 
     ref_time = datetime(2023, 4, 5, 6, 7, 8, tzinfo=timezone.utc)
@@ -213,15 +207,14 @@ def test_set_device_registration__multiple_registration(
         token="device2_token",
         os=DeviceOS.ANDROID,
         version="1",
-        first_connection=ref_time,
-        last_connection=ref_time,
+        connections=[ref_time],
     )
     empty_user_repository.add_device_registration(
         "user1",
         device2.token,
         device2.os,
         device2.version,
-        device2.first_connection,
+        ref_time,
     )
     devices = empty_user_repository.get_device_registrations_from_user_id("user1")
     assert devices == [device, device2]

@@ -26,20 +26,25 @@ def test_register_device(
     )
     assert response.status_code == 200
 
-    assert prefilled_memory_user_repository.users["user1"].devices == [
+    assert prefilled_memory_user_repository.users[
+        "user1"
+    ].notification_info.devices == [
         Device(
             token="user1_device1",
             os=DeviceOS.ANDROID,
             version="1",
-            first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-            last_connection=datetime(2024, 3, 4, 5, 6, 7, tzinfo=timezone.utc),
+            connections=[
+                datetime(2024, 1, 1, tzinfo=timezone.utc),
+                datetime(2024, 3, 4, 5, 6, 7, tzinfo=timezone.utc),
+            ],
         ),
         Device(
             token="user1_device2",
             os=DeviceOS.IOS,
             version="1",
-            first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-            last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
+            connections=[
+                datetime(2024, 1, 1, tzinfo=timezone.utc),
+            ],
         ),
     ]
 
