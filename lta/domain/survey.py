@@ -39,6 +39,7 @@ class NotificationSet(BaseModel):
 class SurveyNotificationInfo(BaseModel):
     email_notification: NotificationSet | None = None
     sms_notification: NotificationSet | None = None
+    push_notification: NotificationSet | None = None
 
 
 class Survey(BaseModel):
