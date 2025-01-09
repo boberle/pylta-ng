@@ -78,7 +78,7 @@ def print_assignment_answers(
         print("No answers")
     else:
         for i, answer in enumerate(assignment.answers):
-            print(i, answer.model_dump())
+            print(i, answer.model_dump() if answer is not None else "---")
 
 
 if __name__ == "__main__":
