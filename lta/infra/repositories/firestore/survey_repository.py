@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from typing import List, Literal
 
@@ -39,10 +40,14 @@ class FirestoreSurveyRepository(SurveyRepository):
 
     def create_survey(self, id: str, survey: SurveyCreation) -> None:
         doc_ref = self.client.collection(self.collection_name).document(id)
-        stored_survey = pydantic.TypeAdapter(StoredSurvey).validate_python(
-            dict(id=id, **survey.model_dump())
-        )
-        doc_ref.set(stored_survey.model_dump())
+        stored_survey: StoredSurvey = pydantic.TypeAdapter(
+            StoredSurvey
+        ).validate_python(dict(id=id, **survey.model_dump()))
+        # Because the question conditions are dictionaries with int keys, we need to convert them to strings
+        # because Firestore does not support dictionaries with integer keys. The simplest way I have
+        # found is to convert them to json.
+        json_data = stored_survey.model_dump_json()
+        doc_ref.set(json.loads(json_data))
 
     def list_surveys(self) -> List[Survey]:
         surveys_ref = self.client.collection(self.collection_name)

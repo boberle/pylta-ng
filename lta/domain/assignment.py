@@ -17,7 +17,7 @@ class OpenEndedAnswer(BaseModel):
     value: str
 
 
-AnswerType = SingleChoiceAnswer | MultipleChoiceAnswer | OpenEndedAnswer
+AnswerType = SingleChoiceAnswer | MultipleChoiceAnswer | OpenEndedAnswer | None
 
 
 class Assignment(BaseModel):

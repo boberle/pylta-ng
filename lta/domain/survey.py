@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class Question(BaseModel):
     message: str
+    conditions: dict[int, None] = Field(default_factory=dict)
 
 
 class SingleChoiceQuestion(Question):
