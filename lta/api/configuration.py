@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     PROJECT_LOCATION: str = "europe-west1"
     ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
     ASSIGNMENT_LIMIT_ON_APP_HOME_PAGE: int = 20
-    SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES: int = 30
+    SOON_TO_EXPIRE_NOTIFICATION_DELAYS_MINUTES: list[int] = [60, 120]
     ASSIGNMENT_EXPIRATION_DELAY_HOURS: int = 24
     CLOUD_TASKS_SERVICE_ACCOUNT_ID: EmailStr = (
         "tasks@dummy-project.iam.gserviceaccount.com"
@@ -208,13 +208,13 @@ class AppConfiguration:
             notification_scheduler = self.direct_notification_scheduler
         else:
             notification_scheduler = self.cloud_tasks_notification_scheduler
+
+        delays = get_settings().SOON_TO_EXPIRE_NOTIFICATION_DELAYS_MINUTES
         return AssignmentService(
             assignment_repository=self.assignment_repository,
             notification_scheduler=notification_scheduler,
             survey_repository=self.survey_repository,
-            reminder_notification_delay=timedelta(
-                minutes=get_settings().SOON_TO_EXPIRE_NOTIFICATION_DELAY_MINUTES
-            ),
+            reminder_notification_delays=[timedelta(minutes=delay) for delay in delays],
         )
 
     @cached_property

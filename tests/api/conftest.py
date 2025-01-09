@@ -72,7 +72,7 @@ def test_client(
         notification_scheduler=notification_scheduler,
         assignment_repository=empty_memory_assignment_repository,
         survey_repository=prefilled_memory_survey_repository,
-        reminder_notification_delay=timedelta(minutes=30),
+        reminder_notification_delays=[timedelta(minutes=30)],
         rand=random.Random(100),
     )
 

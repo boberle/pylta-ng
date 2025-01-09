@@ -13,7 +13,7 @@ class AssignmentService:
     notification_scheduler: NotificationScheduler
     assignment_repository: AssignmentRepository
     survey_repository: SurveyRepository
-    reminder_notification_delay: timedelta
+    reminder_notification_delays: list[timedelta]
     rand: Random = field(default_factory=Random)
 
     def create_assignment(
@@ -36,9 +36,10 @@ class AssignmentService:
             when=first_notification_time,
         )
 
-        second_notification_time = ref_time + self.reminder_notification_delay
-        self.notification_scheduler.schedule_reminder_notification(
-            user_id=user_id,
-            assignment_id=assignment_id,
-            when=second_notification_time,
-        )
+        for delay in self.reminder_notification_delays:
+            second_notification_time = ref_time + delay
+            self.notification_scheduler.schedule_reminder_notification(
+                user_id=user_id,
+                assignment_id=assignment_id,
+                when=second_notification_time,
+            )
