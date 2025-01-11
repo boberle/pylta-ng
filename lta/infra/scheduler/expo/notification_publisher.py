@@ -29,6 +29,7 @@ class ExpoAPI:
 @dataclass
 class ExpoNotificationPublisher(NotificationPublisher):
     expo_api: ExpoAPI
+    null_device_token = "__null__"
 
     def send_notification(
         self,
@@ -52,6 +53,8 @@ class ExpoNotificationPublisher(NotificationPublisher):
         devices = user_notification_info.devices
         success = False
         for device in devices:
+            if device.token == self.null_device_token:
+                continue
             try:
                 self.send_push_notification(
                     device_token=device.token,
