@@ -17,6 +17,7 @@ from lta.api.configuration import (
     Environment,
     get_assignment_repository,
     get_assignment_service,
+    get_expo_notification_publisher,
     get_firebase_app,
     get_firestore_client,
     get_mailgun_notification_publisher,
@@ -202,6 +203,29 @@ def send_test_sms_notification(
         phone_number=phone_number,
         message="Test SMS Notification",
     )
+
+
+@app.command()
+def send_test_push_notification(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    notification_publisher = get_expo_notification_publisher()
+    user_repository = get_user_repository()
+
+    devices = user_repository.get_user(user_id).notification_info.devices
+    tokens = [device.token for device in devices if device.token != "__null__"]
+    if len(tokens) == 0:
+        print(f"No device token found for user id: {user_id}")
+        return
+
+    for token in tokens:
+        print(f"Sending push notification to device token: {token}")
+        notification_publisher.send_push_notification(
+            device_token=token,
+            title="LTA test notification",
+            body="This is a test push notification.",
+        )
 
 
 @app.command()
