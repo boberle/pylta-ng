@@ -117,7 +117,7 @@ async def get_assignment_with_user_id(
     )
 
 
-@router.get("/assignments/{user_id}/{assignment_id}/")
+@router.get("/assignments/{assignment_id}/")
 async def get_assignment(
     assignment_id: str,
     configuration: AppConfiguration = Depends(get_configuration),
