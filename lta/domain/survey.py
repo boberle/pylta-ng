@@ -95,5 +95,15 @@ def get_test_survey() -> Survey:
                     message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
                 ),
             ),
+            push_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="LTA Survey published",
+                    message="Hey! New survey available!",
+                ),
+                reminder_notification=NotificationMessage(
+                    title="LTA Survey waiting for you",
+                    message="Don't forget to take the survey soon!",
+                ),
+            ),
         ),
     )
