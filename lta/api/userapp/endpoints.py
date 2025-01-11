@@ -100,6 +100,9 @@ async def get_assignment_with_user_id(
     assignment = configuration.assignment_repository.get_assignment(
         user_id, assignment_id
     )
+    if assignment.submitted_at is not None:
+        raise HTTPException(status_code=410, detail="Assignment already submitted")
+
     survey = configuration.survey_repository.get_survey(assignment.survey_id)
 
     configuration.assignment_repository.open_assignment(
@@ -126,6 +129,9 @@ async def get_assignment(
     assignment = configuration.assignment_repository.get_assignment(
         user.id, assignment_id
     )
+    if assignment.submitted_at is not None:
+        raise HTTPException(status_code=410, detail="Assignment already submitted")
+
     survey = configuration.survey_repository.get_survey(assignment.survey_id)
 
     configuration.assignment_repository.open_assignment(
