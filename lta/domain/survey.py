@@ -61,17 +61,18 @@ def get_test_survey() -> Survey:
         submit_message="Thank you for completing the test survey!",
         questions=[
             SingleChoiceQuestion(
-                message="What is your favorite animal?",
-                choices=["Dog", "Cat", "Bird", "Fish"],
+                message="What is your favorite color?",
+                choices=["Red", "Green", "Blue", "Other (please specify)"],
                 last_is_specify=True,
             ),
             MultipleChoiceQuestion(
-                message="What are your favorite fruit?",
-                choices=["Apple", "Banana", "Orange", "Grape"],
+                message="What are your favorite animals?",
+                choices=["Cat", "Dog", "Giraffe", "Fish", "Bird"],
             ),
             OpenEndedQuestion(
-                message="What is your favorite color?",
+                message="What is your favorite flower (optional)?",
                 max_length=25,
+                optional=True,
             ),
         ],
         notifications=SurveyNotificationInfo(
