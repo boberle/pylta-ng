@@ -17,7 +17,11 @@ class AssignmentService:
     rand: Random = field(default_factory=Random)
 
     def create_assignment(
-        self, user_id: str, survey_id: str, ref_time: datetime
+        self,
+        user_id: str,
+        survey_id: str,
+        ref_time: datetime,
+        send_reminder_notifications: bool = True,
     ) -> None:
         survey = self.survey_repository.get_survey(survey_id)
         assignment_id = str(make_uuid4(self.rand))
@@ -36,10 +40,11 @@ class AssignmentService:
             when=first_notification_time,
         )
 
-        for delay in self.reminder_notification_delays:
-            second_notification_time = ref_time + delay
-            self.notification_scheduler.schedule_reminder_notification(
-                user_id=user_id,
-                assignment_id=assignment_id,
-                when=second_notification_time,
-            )
+        if send_reminder_notifications:
+            for delay in self.reminder_notification_delays:
+                second_notification_time = ref_time + delay
+                self.notification_scheduler.schedule_reminder_notification(
+                    user_id=user_id,
+                    assignment_id=assignment_id,
+                    when=second_notification_time,
+                )

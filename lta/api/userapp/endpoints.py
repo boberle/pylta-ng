@@ -225,7 +225,10 @@ def schedule_assignment(
     assignment_service: AssignmentService = Depends(get_assignment_service),
 ) -> None:
     assignment_service.create_assignment(
-        user_id=user.id, survey_id=TEST_SURVEY_ID, ref_time=ref_time
+        user_id=user.id,
+        survey_id=TEST_SURVEY_ID,
+        ref_time=ref_time,
+        send_reminder_notifications=False,
     )
 
 
