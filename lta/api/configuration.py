@@ -140,6 +140,7 @@ class AppConfiguration:
             publishers=[
                 self.mailgun_notification_publisher,
                 self.vonage_notification_publisher,
+                self.expo_notification_publisher,
             ],
             user_repository=self.user_repository,
             assignment_repository=self.assignment_repository,
