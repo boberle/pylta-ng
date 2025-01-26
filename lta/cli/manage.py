@@ -70,6 +70,21 @@ def set_has_set_own_password(
 
 
 @app.command()
+def remove_has_set_own_password(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    app = get_firebase_app()
+    custom_claims = firebase_admin.auth.get_user(user_id, app).custom_claims
+    if custom_claims is None:
+        custom_claims = dict()
+    custom_claims[HAS_SET_OWN_PASSWORD_FIELD] = False
+    firebase_admin.auth.set_custom_user_claims(
+        user_id, custom_claims=custom_claims, app=app
+    )
+
+
+@app.command()
 def get_claims(
     user_id: str = Option(...),
 ) -> None:
