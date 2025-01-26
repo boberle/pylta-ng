@@ -424,5 +424,56 @@ def create_survey_from_file(
     print("Survey created successfully with id:", id)
 
 
+@app.command()
+def export_completed_assigned_surveys(
+    user_ids: list[str] = Option(..., "--user-id", help="may be repeated"),
+    file: Path = Option(..., help="path to the output CSV file"),
+    use_email_address: bool = Option(
+        False, help="use email addresses instead of user ids"
+    ),
+) -> None:
+    """
+    Produce a CSV file containing a list of all assignments for the given user ids,
+    and if these assignments are completed.
+
+        ,       2024-01-01, 2024-01-02, 2024-01-03, 2024-01-04
+        user1,  X,        ,           , X         , X
+        user2,  ,         , X         ,           , X
+
+    NOTE: This command assumes that there is only one assignment per user per day.
+    """
+    set_environment(Environment.LOCAL_PROD)
+    user_repository = get_user_repository()
+    assignment_repository = get_assignment_repository()
+
+    assignments: list[Assignment] = []
+    id2addresses = dict()
+    for user_id in user_ids:
+        user = user_repository.get_user(user_id)
+        id2addresses[user.id] = user.email_address
+        for assignment in assignment_repository.list_assignments(user_id=user.id):
+            assignments.append(assignment)
+
+    dates = sorted(set(a.created_at.strftime("%Y-%m-%d") for a in assignments))
+    data: dict[str, dict[str, bool]] = {
+        user_id: {date: False for date in dates} for user_id in user_ids
+    }
+
+    for assignment in assignments:
+        data[assignment.user_id][assignment.created_at.strftime("%Y-%m-%d")] = (
+            assignment.submitted_at is not None
+        )
+
+    with file.open("w", newline="") as csvfile:
+        headers: list[str] = ["user"] + [date for date in dates]
+        csv_writer = csv.DictWriter(csvfile, fieldnames=headers)
+        csv_writer.writeheader()
+        for user_id, row in data.items():
+            csv_writer.writerow(
+                dict(user=id2addresses[user_id] if use_email_address else user_id)
+                | {date: "x" if value else "" for date, value in row.items()}
+            )
+
+
 if __name__ == "__main__":
     app()
