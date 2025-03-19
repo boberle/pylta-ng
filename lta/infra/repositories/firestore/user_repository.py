@@ -33,7 +33,7 @@ class FirestoreUserRepository(UserRepository):
 
     def get_device_registrations_from_user_id(self, id: str) -> List[Device]:
         user = self.get_user(id)
-        return user.devices
+        return user.notification_info.devices
 
     def get_user(self, id: str) -> User:
         user_ref = self.client.collection(self.collection_name).document(id)
@@ -48,23 +48,26 @@ class FirestoreUserRepository(UserRepository):
     ) -> None:
         user = self.get_user(id)
 
-        for device in user.devices:
+        for device in user.notification_info.devices:
             if device.token == token:
                 device.add_connection_time(date)
                 break
         else:
-            user.devices.append(
+            user.notification_info.devices.append(
                 Device(
                     token=token,
                     os=os,
                     version=version,
-                    first_connection=date,
-                    last_connection=date,
+                    connections=[date],
                 )
             )
 
         self.client.collection(self.collection_name).document(id).update(
-            {"devices": [d.model_dump() for d in user.devices]}
+            {
+                "notification_info.devices": [
+                    d.model_dump() for d in user.notification_info.devices
+                ]
+            }
         )
 
     def create_user(
@@ -79,7 +82,6 @@ class FirestoreUserRepository(UserRepository):
             id=id,
             email_address=email_address,
             created_at=created_at,
-            devices=[],
             notification_info=UserNotificationInfo(
                 email_address=notification_email,
                 phone_number=phone_number,

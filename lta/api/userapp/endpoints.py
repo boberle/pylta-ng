@@ -7,6 +7,7 @@ from lta.api.configuration import (
     AppConfiguration,
     get_assignment_service,
     get_configuration,
+    get_expo_notification_publisher,
     get_user_repository,
 )
 from lta.authentication import AuthenticatedUser, get_authenticated_user
@@ -21,6 +22,7 @@ from lta.domain.survey import (
 from lta.domain.survey_repository import TEST_SURVEY_ID
 from lta.domain.user import DeviceOS
 from lta.domain.user_repository import UserRepository
+from lta.infra.scheduler.expo.notification_publisher import ExpoNotificationPublisher
 
 router = APIRouter()
 
@@ -120,7 +122,7 @@ async def get_assignment_with_user_id(
     )
 
 
-@router.get("/assignments/{user_id}/{assignment_id}/")
+@router.get("/assignments/{assignment_id}/")
 async def get_assignment(
     assignment_id: str,
     configuration: AppConfiguration = Depends(get_configuration),
@@ -229,5 +231,26 @@ def schedule_assignment(
     assignment_service: AssignmentService = Depends(get_assignment_service),
 ) -> None:
     assignment_service.create_assignment(
-        user_id=user.id, survey_id=TEST_SURVEY_ID, ref_time=ref_time
+        user_id=user.id,
+        survey_id=TEST_SURVEY_ID,
+        ref_time=ref_time,
+        send_reminder_notifications=False,
     )
+
+
+@router.get("/test-notification/")
+def test_push_notification(
+    user: AuthenticatedUser = Depends(get_authenticated_user),
+    user_repository: UserRepository = Depends(get_user_repository),
+    notification_publisher: ExpoNotificationPublisher = Depends(
+        get_expo_notification_publisher
+    ),
+) -> None:
+    devices = user_repository.get_user(user.id).notification_info.devices
+    tokens = [device.token for device in devices if device.token != "__null__"]
+    for token in tokens:
+        notification_publisher.send_push_notification(
+            device_token=token,
+            title="LTA test notification",
+            body="This is a test push notification.",
+        )

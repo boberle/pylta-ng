@@ -39,6 +39,7 @@ class NotificationSet(BaseModel):
 class SurveyNotificationInfo(BaseModel):
     email_notification: NotificationSet | None = None
     sms_notification: NotificationSet | None = None
+    push_notification: NotificationSet | None = None
 
 
 class Survey(BaseModel):
@@ -60,17 +61,18 @@ def get_test_survey() -> Survey:
         submit_message="Thank you for completing the test survey!",
         questions=[
             SingleChoiceQuestion(
-                message="What is your favorite animal?",
-                choices=["Dog", "Cat", "Bird", "Fish"],
+                message="What is your favorite color?",
+                choices=["Red", "Green", "Blue", "Other (please specify)"],
                 last_is_specify=True,
             ),
             MultipleChoiceQuestion(
-                message="What are your favorite fruit?",
-                choices=["Apple", "Banana", "Orange", "Grape"],
+                message="What are your favorite animals?",
+                choices=["Cat", "Dog", "Giraffe", "Fish", "Bird"],
             ),
             OpenEndedQuestion(
-                message="What is your favorite color?",
+                message="What is your favorite flower (optional)?",
                 max_length=25,
+                optional=True,
             ),
         ],
         notifications=SurveyNotificationInfo(
@@ -92,6 +94,16 @@ def get_test_survey() -> Survey:
                 reminder_notification=NotificationMessage(
                     title="",
                     message="Test survey at https://langtrackapp.com/panelist/{user_id}/{survey_id}/",
+                ),
+            ),
+            push_notification=NotificationSet(
+                initial_notification=NotificationMessage(
+                    title="LTA Survey published",
+                    message="Hey! New survey available!",
+                ),
+                reminder_notification=NotificationMessage(
+                    title="LTA Survey waiting for you",
+                    message="Don't forget to take the survey soon!",
                 ),
             ),
         ),

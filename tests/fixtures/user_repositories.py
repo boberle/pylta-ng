@@ -20,26 +20,24 @@ def sample_user_1() -> User:
     return User(
         id="user1",
         email_address="user1@idontexist.net",
-        devices=[
-            Device(
-                token="user1_device1",
-                os=DeviceOS.ANDROID,
-                version="1",
-                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
-            ),
-            Device(
-                token="user1_device2",
-                os=DeviceOS.IOS,
-                version="1",
-                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                last_connection=datetime(2024, 1, 3, tzinfo=timezone.utc),
-            ),
-        ],
         created_at=datetime(2022, 1, 1, tzinfo=timezone.utc),
         notification_info=UserNotificationInfo(
             phone_number="123",
             email_address="user1@idontexist.net",
+            devices=[
+                Device(
+                    token="user1_device1",
+                    os=DeviceOS.ANDROID,
+                    version="1",
+                    connections=[datetime(2024, 1, 1, tzinfo=timezone.utc)],
+                ),
+                Device(
+                    token="user1_device2",
+                    os=DeviceOS.IOS,
+                    version="1",
+                    connections=[datetime(2024, 1, 1, tzinfo=timezone.utc)],
+                ),
+            ],
         ),
     )
 
@@ -49,18 +47,17 @@ def sample_user_2() -> User:
     return User(
         id="user2",
         email_address="user2@idontexist.net",
-        devices=[
-            Device(
-                token="user2_device1",
-                os=DeviceOS.ANDROID,
-                version="1",
-                first_connection=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                last_connection=datetime(2024, 1, 2, tzinfo=timezone.utc),
-            ),
-        ],
         created_at=datetime(2022, 2, 2, tzinfo=timezone.utc),
         notification_info=UserNotificationInfo(
             email_address="user2@idontexist.net",
+            devices=[
+                Device(
+                    token="user2_device1",
+                    os=DeviceOS.ANDROID,
+                    version="1",
+                    connections=[datetime(2024, 1, 1, tzinfo=timezone.utc)],
+                ),
+            ],
         ),
     )
 
@@ -70,7 +67,6 @@ def sample_user_3() -> User:
     return User(
         id="user3",
         email_address="user3@idontexist.net",
-        devices=[],
         created_at=datetime(2022, 3, 3, tzinfo=timezone.utc),
         notification_info=UserNotificationInfo(),
     )

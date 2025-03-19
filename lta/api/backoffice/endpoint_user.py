@@ -24,7 +24,7 @@ class UserItemResponse(BaseModel):
         return UserItemResponse(
             id=user.id,
             email_address=user.email_address,
-            device_oses=[device.os for device in user.devices],
+            device_oses=[device.os for device in user.notification_info.devices],
         )
 
 
@@ -47,8 +47,7 @@ class Device(BaseModel):
     token: str
     os: DeviceOS
     version: str | None
-    first_connection: datetime
-    last_connection: datetime
+    connections: list[datetime]
 
 
 class UserResponse(BaseModel):
@@ -68,10 +67,9 @@ class UserResponse(BaseModel):
                     token=device.token,
                     os=device.os,
                     version=device.version,
-                    first_connection=device.first_connection,
-                    last_connection=device.last_connection,
+                    connections=device.connections,
                 )
-                for device in user.devices
+                for device in user.notification_info.devices
             ],
         )
 

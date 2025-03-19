@@ -17,7 +17,7 @@ class InMemoryUserRepository(UserRepository):
     def get_device_registrations_from_user_id(self, id: str) -> list[Device]:
         if id not in self.users:
             raise UserNotFound(user_id=id)
-        return list(self.users[id].devices)
+        return list(self.users[id].notification_info.devices)
 
     def get_user(self, id: str) -> User:
         if id not in self.users:
@@ -30,18 +30,17 @@ class InMemoryUserRepository(UserRepository):
         if id not in self.users:
             raise UserNotFound(user_id=id)
 
-        for device in self.users[id].devices:
+        for device in self.users[id].notification_info.devices:
             if device.token == token:
                 device.add_connection_time(date)
                 return
 
-        self.users[id].devices.append(
+        self.users[id].notification_info.devices.append(
             Device(
                 token=token,
                 os=os,
                 version=version,
-                first_connection=date,
-                last_connection=date,
+                connections=[date],
             )
         )
 

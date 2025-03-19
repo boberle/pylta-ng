@@ -38,6 +38,10 @@ from lta.infra.scheduler.direct.assignment_scheduler import DirectAssignmentSche
 from lta.infra.scheduler.direct.notification_scheduler import (
     DirectNotificationScheduler,
 )
+from lta.infra.scheduler.expo.notification_publisher import (
+    ExpoAPI,
+    ExpoNotificationPublisher,
+)
 from lta.infra.scheduler.google_tasks.assignment_scheduler import (
     CloudTasksAssignmentScheduler,
 )
@@ -136,6 +140,7 @@ class AppConfiguration:
             publishers=[
                 self.mailgun_notification_publisher,
                 self.vonage_notification_publisher,
+                self.expo_notification_publisher,
             ],
             user_repository=self.user_repository,
             assignment_repository=self.assignment_repository,
@@ -177,6 +182,10 @@ class AppConfiguration:
             client=client,
             sender=sender,
         )
+
+    @cached_property
+    def expo_notification_publisher(self) -> ExpoNotificationPublisher:
+        return ExpoNotificationPublisher(expo_api=ExpoAPI())
 
     @cached_property
     def cloud_tasks_notification_scheduler(self) -> NotificationScheduler:
@@ -378,3 +387,7 @@ def get_mailgun_notification_publisher() -> MailgunNotificationPublisher:
 
 def get_vonage_notification_publisher() -> VonageNotificationPublisher:
     return get_configuration().vonage_notification_publisher
+
+
+def get_expo_notification_publisher() -> ExpoNotificationPublisher:
+    return get_configuration().expo_notification_publisher

@@ -17,6 +17,7 @@ from lta.api.configuration import (
     Environment,
     get_assignment_repository,
     get_assignment_service,
+    get_expo_notification_publisher,
     get_firebase_app,
     get_firestore_client,
     get_mailgun_notification_publisher,
@@ -63,6 +64,21 @@ def set_has_set_own_password(
     if custom_claims is None:
         custom_claims = dict()
     custom_claims[HAS_SET_OWN_PASSWORD_FIELD] = True
+    firebase_admin.auth.set_custom_user_claims(
+        user_id, custom_claims=custom_claims, app=app
+    )
+
+
+@app.command()
+def remove_has_set_own_password(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    app = get_firebase_app()
+    custom_claims = firebase_admin.auth.get_user(user_id, app).custom_claims
+    if custom_claims is None:
+        custom_claims = dict()
+    custom_claims[HAS_SET_OWN_PASSWORD_FIELD] = False
     firebase_admin.auth.set_custom_user_claims(
         user_id, custom_claims=custom_claims, app=app
     )
@@ -202,6 +218,29 @@ def send_test_sms_notification(
         phone_number=phone_number,
         message="Test SMS Notification",
     )
+
+
+@app.command()
+def send_test_push_notification(
+    user_id: str = Option(...),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    notification_publisher = get_expo_notification_publisher()
+    user_repository = get_user_repository()
+
+    devices = user_repository.get_user(user_id).notification_info.devices
+    tokens = [device.token for device in devices if device.token != "__null__"]
+    if len(tokens) == 0:
+        print(f"No device token found for user id: {user_id}")
+        return
+
+    for token in tokens:
+        print(f"Sending push notification to device token: {token}")
+        notification_publisher.send_push_notification(
+            device_token=token,
+            title="LTA test notification",
+            body="This is a test push notification.",
+        )
 
 
 @app.command()
@@ -383,6 +422,57 @@ def create_survey_from_file(
         survey=survey,
     )
     print("Survey created successfully with id:", id)
+
+
+@app.command()
+def export_completed_assigned_surveys(
+    user_ids: list[str] = Option(..., "--user-id", help="may be repeated"),
+    file: Path = Option(..., help="path to the output CSV file"),
+    use_email_address: bool = Option(
+        False, help="use email addresses instead of user ids"
+    ),
+) -> None:
+    """
+    Produce a CSV file containing a list of all assignments for the given user ids,
+    and if these assignments are completed.
+
+        ,       2024-01-01, 2024-01-02, 2024-01-03, 2024-01-04
+        user1,  X,        ,           , X         , X
+        user2,  ,         , X         ,           , X
+
+    NOTE: This command assumes that there is only one assignment per user per day.
+    """
+    set_environment(Environment.LOCAL_PROD)
+    user_repository = get_user_repository()
+    assignment_repository = get_assignment_repository()
+
+    assignments: list[Assignment] = []
+    id2addresses = dict()
+    for user_id in user_ids:
+        user = user_repository.get_user(user_id)
+        id2addresses[user.id] = user.email_address
+        for assignment in assignment_repository.list_assignments(user_id=user.id):
+            assignments.append(assignment)
+
+    dates = sorted(set(a.created_at.strftime("%Y-%m-%d") for a in assignments))
+    data: dict[str, dict[str, bool]] = {
+        user_id: {date: False for date in dates} for user_id in user_ids
+    }
+
+    for assignment in assignments:
+        data[assignment.user_id][assignment.created_at.strftime("%Y-%m-%d")] = (
+            assignment.submitted_at is not None
+        )
+
+    with file.open("w", newline="") as csvfile:
+        headers: list[str] = ["user"] + [date for date in dates]
+        csv_writer = csv.DictWriter(csvfile, fieldnames=headers)
+        csv_writer.writeheader()
+        for user_id, row in data.items():
+            csv_writer.writerow(
+                dict(user=id2addresses[user_id] if use_email_address else user_id)
+                | {date: "x" if value else "" for date, value in row.items()}
+            )
 
 
 if __name__ == "__main__":

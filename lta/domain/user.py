@@ -16,22 +16,21 @@ class Device(BaseModel):
     token: str
     os: DeviceOS
     version: str | None
-    first_connection: datetime
-    last_connection: datetime
+    connections: list[datetime]
 
     def add_connection_time(self, connection_time: datetime) -> None:
-        self.last_connection = connection_time
+        self.connections.append(connection_time)
 
 
 class UserNotificationInfo(BaseModel):
     phone_number: str | None = None
     email_address: EmailStr | None = None
+    devices: list[Device] = Field(default_factory=list)
 
 
 class User(BaseModel):
     id: str
     email_address: EmailStr
-    devices: list[Device] = Field(default_factory=list)
     created_at: datetime
     notification_info: UserNotificationInfo = Field(
         default_factory=UserNotificationInfo

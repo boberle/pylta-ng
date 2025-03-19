@@ -60,7 +60,7 @@ class NotificationService:
         has_sent = self.send_notification(user, assignment, notification_type)
         if not has_sent:
             logging.warning(
-                "Notification not sent: no notification channel available",
+                "Notification not sent: no notification channel available or not defined in survey",
                 extra=dict(
                     json_fields={"user_id": user_id, "assignment_id": assignment_id}
                 ),
