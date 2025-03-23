@@ -477,5 +477,16 @@ def export_completed_assigned_surveys(
             )
 
 
+@app.command()
+def create_firebase_user(
+    email: str = Option(...),
+    password: str = Option(..., help="plain text password"),
+) -> None:
+    set_environment(Environment.LOCAL_PROD)
+    app = get_firebase_app()
+    user = firebase_admin.auth.create_user(email=email, password=password, app=app)
+    print("Firebase user created:", user.uid)
+
+
 if __name__ == "__main__":
     app()
