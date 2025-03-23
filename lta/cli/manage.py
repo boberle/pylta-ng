@@ -97,7 +97,7 @@ def get_claims(
 @app.command()
 def schedule_assignments(
     ref_time: datetime = Option(
-        datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        datetime.now(tz=timezone.utc), formats=["%Y-%m-%dT%H:%M:%S%z"]
     ),
 ) -> None:
     """Schedule assignments for the ref date"""
@@ -132,10 +132,12 @@ def send_test_email_notification(
 def schedule_assignment(
     user_id: str = Option(...),
     survey_id: str = Option(...),
+    ref_time: datetime = Option(
+        datetime.now(tz=timezone.utc), formats=["%Y-%m-%dT%H:%M:%S%z"]
+    ),
 ) -> None:
     set_environment(Environment.LOCAL_PROD)
     assignment_service = get_assignment_service()
-    ref_time = datetime.now(tz=timezone.utc)
     assignment_service.create_assignment(
         user_id=user_id, survey_id=survey_id, ref_time=ref_time
     )
